@@ -22,6 +22,7 @@ public class NioServer {
 
     static Logger logger = LoggerFactory.getLogger(ServerBootstrap.class);
 
+
     public static void main(String[] args) {
         try {
             ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
@@ -60,7 +61,7 @@ public class NioServer {
                         // 服务器可读消息，得到事件发生的socket通道
                         SocketChannel channel = (SocketChannel) key.channel();
                         // 读取的缓冲区
-                        ByteBuffer buffer = ByteBuffer.allocate(10);
+                        ByteBuffer buffer = ByteBuffer.allocate(12);
                         channel.read(buffer);
                         byte[] data = buffer.array();
                         String msg = new String(data).trim();

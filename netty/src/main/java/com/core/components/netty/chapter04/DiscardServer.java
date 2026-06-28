@@ -1,5 +1,6 @@
-package com.core.components.netty;
+package com.core.components.netty.chapter04;
 
+import com.core.components.netty.Const;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;

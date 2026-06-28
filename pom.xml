@@ -34,6 +34,8 @@
         <module>log</module>
         <module>springboot</module>
         <module>elastic</module>
+        <module>jgrapht</module>
+        <module>rpcTest</module>
     </modules>
 
     <dependencyManagement>

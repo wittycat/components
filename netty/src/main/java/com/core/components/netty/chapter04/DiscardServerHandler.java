@@ -1,4 +1,4 @@
-package com.core.components.netty;
+package com.core.components.netty.chapter04;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerAdapter;
