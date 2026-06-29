@@ -9,6 +9,6 @@ public class RpcProviderTest {
         // 注册服务
         ServiceRegistry.registerService(HelloService.class.getName(), new HelloServiceImpl());
         // 启动服务端
-        new RpcServer().start(8080);
+        new RpcServer().start(8081);
     }
 }
