@@ -36,6 +36,7 @@
         <module>elastic</module>
         <module>jgrapht</module>
         <module>rpcTest</module>
+        <module>sca2025Test</module>
     </modules>
 
     <dependencyManagement>
@@ -53,4 +54,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>

@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: consumer-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        # Nacos 3.x 默认使用 gRPC 端口（9848），无需额外配置
+        # 开启自动注册，缺省容易报错
+        username: nacos   # 检查这里
+        password: nacos    # 检查这里
+server:
+  port: 8082
