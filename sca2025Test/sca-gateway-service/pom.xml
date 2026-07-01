@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.wittycat.components</groupId>
+        <artifactId>sca2025Test</artifactId>
+        <version>1.0</version>
+    </parent>
+
+    <artifactId>sca-gateway-service</artifactId>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!--
+        2025.0.0+（Northfields，你现在使用的版本）
+        官方做了架构拆分，旧 spring-cloud-starter-gateway 被标记废弃：
+        旧 starter 内部仍依赖 WebFlux，但属于兼容过渡包；
+        官方推荐替代：spring-cloud-starter-gateway-server-webflux，纯 WebFlux 专用网关，无冗余兼容代码；
+        同步拆分出 MVC 兼容版 spring-cloud-starter-gateway-server-webmvc（基于 Servlet，性能差，不推荐网关使用）。
+        -->
+        <!-- Gateway 依赖（不含 Web Starter）gateway 已经过期使用webflux替代 -->
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.cloud</groupId>-->
+<!--            <artifactId>spring-cloud-starter-gateway</artifactId>-->
+<!--        </dependency>-->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-gateway-server-webflux</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+        </dependency>
+
+        <!-- Nacos 服务发现 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+        <!-- 可选：如需动态路由配置，可引入 Nacos Config，但本示例仅用服务发现 -->
+        <!--
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
+        -->
+    </dependencies>
+
+</project>

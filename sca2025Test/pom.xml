@@ -12,6 +12,7 @@
     <modules>
         <module>sca-provider-service</module>
         <module>sca-consumer-service</module>
+        <module>sca-gateway-service</module>
     </modules>
     <artifactId>sca2025Test</artifactId>
 
@@ -43,5 +44,12 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
 
 </project>

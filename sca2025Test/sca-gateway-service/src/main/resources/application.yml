@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        username: nacos   # 检查这里
+        password: nacos    # 检查这里
+    gateway:
+        server:
+          webflux:
+            routes:
+              # 路由规则：将 /provider/** 转发到 provider-service
+              - id: provider-route
+                uri: lb://provider-service   # lb:// 表示负载均衡
+                predicates:
+                  - Path=/provider/**
+                filters:
+                  - StripPrefix=1            # 去掉第一个路径段（/provider）
+              # 将 /consumer/** 转发到 consumer-service
+              - id: consumer-route
+                uri: lb://consumer-service
+                predicates:
+                  - Path=/consumer/**
+                filters:
+                  - StripPrefix=1
+              # 可选：直接转发到 /hello 路径（无需前缀）
+              - id: hello-route
+                uri: lb://provider-service
+                predicates:
+                  - Path=/hello
+                filters:
+                # 不需要 StripPrefix，因为路径无需截断
+
+server:
+  port: 8083   # 网关端口

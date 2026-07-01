@@ -1,4 +1,4 @@
-package com.wittycat.components;
+package com.wittycat.components.sca.consumer;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
