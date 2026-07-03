@@ -1,16 +1,16 @@
-# JDK17 官方轻量运行时镜像，支持ARM/M系列Mac
+# JDK17 官方轻量运行时镜像
 FROM eclipse-temurin:17-jre
 
 # 容器工作目录
 WORKDIR /app
 
-# 复制打包好的jar包（和pom里artifactId-version保持一致）
+# 复制打包好的jar包到镜像里面名字叫app.jar
 COPY target/springboot-1.0.jar app.jar
 
 # SpringBoot默认端口
 EXPOSE 8080
 
-# 启动命令
+# 启动镜像里面jar
 ENTRYPOINT ["java","-jar","app.jar"]
 
 
@@ -33,3 +33,9 @@ ENTRYPOINT ["java","-jar","app.jar"]
 # 删除已停止的容器（下次run才能重名）
 #docker rm springboot-app
 
+#docker ps
+#CONTAINER ID   IMAGE            COMMAND               CREATED          STATUS          PORTS                                         NAMES
+#053746b20db4   spring-demo:v1   "java -jar app.jar"   19 minutes ago   Up 19 minutes   0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp   springboot-app
+
+#1个node（虚拟机或者物理机）->1个或多个pod->一般一个pod里面一个容器：镜像的实例
+#https://www.bilibili.com/video/BV1Se411r7vY?spm_id_from=333.788.videopod.sections&vd_source=cf47bbb62fe30d65e7f4d00506567f69
