@@ -50,6 +50,25 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+
+
+        <!-- 1. 桥接器：将 Micrometer Tracing 的追踪数据桥接到 Brave (Zipkin 的 Java 客户端) -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-brave</artifactId>
+        </dependency>
+        <!-- 2. Micrometer Tracing 核心库：micrometer-tracing 和 micrometer-core 会由上述依赖自动引入，无需重复添加 -->
+
+        <!-- 3. Zipkin 报告器：负责将追踪数据发送到 Zipkin 服务器 -->
+        <dependency>
+            <groupId>io.zipkin.reporter2</groupId>
+            <artifactId>zipkin-reporter-brave</artifactId>
+        </dependency>
+        <!-- 4. 必须的：Spring Boot Actuator，用于暴露追踪端点 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

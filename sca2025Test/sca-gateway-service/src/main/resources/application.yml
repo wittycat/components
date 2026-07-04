@@ -1,3 +1,5 @@
+server:
+  port: 8083   # 网关端口
 spring:
   application:
     name: gateway-service
@@ -32,6 +34,12 @@ spring:
                   - Path=/hello
                 filters:
                 # 不需要 StripPrefix，因为路径无需截断
-
-server:
-  port: 8083   # 网关端口
+  reactor:
+    context-propagation: auto
+management:
+  tracing:
+    sampling:
+      probability: 1.0 # 采样率，1.0 表示 100% 采样，生产环境建议调低，如 0.1
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans # 你的 Zipkin 服务器地址

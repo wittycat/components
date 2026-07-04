@@ -1,3 +1,5 @@
+server:
+  port: 8082
 spring:
   application:
     name: consumer-service
@@ -9,5 +11,12 @@ spring:
         # 开启自动注册，缺省容易报错
         username: nacos   # 检查这里
         password: nacos    # 检查这里
-server:
-  port: 8082
+#  reactor:
+#    context-propagation: auto
+management:
+  tracing:
+      sampling:
+        probability: 1.0 # 采样率，1.0 表示 100% 采样，生产环境建议调低，如 0.1
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans # 你的 Zipkin 服务器地址

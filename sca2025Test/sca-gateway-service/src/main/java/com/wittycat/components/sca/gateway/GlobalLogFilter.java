@@ -19,15 +19,25 @@ public class GlobalLogFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        long startTime = System.currentTimeMillis();
         String path = exchange.getRequest().getURI().getPath();
         String method = exchange.getRequest().getMethod().name();
-        log.info("网关接收请求：{} {}", method, path);
-        return chain.filter(exchange);
+
+        // 记录请求开始
+        log.info("【请求开始】{} {}，参数：{}", method, path, exchange.getRequest().getQueryParams());
+
+        // 在响应结束后记录
+        return chain.filter(exchange).then(Mono.fromRunnable(() -> {
+            long duration = System.currentTimeMillis() - startTime;
+            int status = exchange.getResponse().getStatusCode() != null ?
+                    exchange.getResponse().getStatusCode().value() : 0;
+            log.info("【请求结束】{} {}，状态码：{}，耗时：{} ms", method, path, status, duration);
+        }));
     }
 
     @Override
     public int getOrder() {
-        return -1;   // 优先级最高
+        return -1; // 最高优先级
     }
 
 }

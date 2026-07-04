@@ -1,6 +1,7 @@
 package com.wittycat.components.sca.consumer;
 
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
@@ -31,9 +32,20 @@ public class CallController {
         for (ServiceInstance serviceInstance:instances) {
             log.info("instances_info  serviceId={}  host={} ",serviceInstance.getServiceId(),serviceInstance.getHost());
         }
-
         String result = helloFeignClient.sayHello(name);
         log.info("name={}, result={}  ",name,result);
         return result;
+    }
+
+    @GetMapping("/test-log")
+    public String test() {
+        // 手动塞入测试数据
+        MDC.put("traceId", "TEST-12345");
+        MDC.put("spanId", "TEST-67890");
+
+        log.info("这是使用 @Slf4j 打印的测试日志");
+
+        MDC.clear(); // 清除，防止污染其他请求
+        return "OK";
     }
 }

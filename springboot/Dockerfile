@@ -33,6 +33,10 @@ ENTRYPOINT ["java","-jar","app.jar"]
 # 删除已停止的容器（下次run才能重名）
 #docker rm springboot-app
 
+#查看所有镜像
+#docker images
+
+#查看所有运行的容器
 #docker ps
 #CONTAINER ID   IMAGE            COMMAND               CREATED          STATUS          PORTS                                         NAMES
 #053746b20db4   spring-demo:v1   "java -jar app.jar"   19 minutes ago   Up 19 minutes   0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp   springboot-app

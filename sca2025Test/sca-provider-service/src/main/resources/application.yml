@@ -1,3 +1,10 @@
+# 方式一给类注入属性：类注解上有ServerProperties  @ConfigurationProperties("server")
+server:
+  port: 8081
+# 方式二：给属性注入默认值  @Value("${demo.config.message:默认消息}")
+#demo:
+#  config:
+#    message: 这是 Nacos 配置中心动态刷新的消息！时间戳：{随机数字}
 spring:
   application:
     name: provider-service
@@ -17,12 +24,12 @@ spring:
   config:
     import:
       - optional:nacos:provider-service.yaml?refresh=true
-
-  # namespace: public           # 如有命名空间可开启
-# 方式一给类注入属性：类注解上有ServerProperties  @ConfigurationProperties("server")
-server:
-  port: 8081
-# 方式二：给属性注入默认值  @Value("${demo.config.message:默认消息}")
-#demo:
-#  config:
-#    message: 这是 Nacos 配置中心动态刷新的消息！时间戳：{随机数字}
+#  reactor:
+#    context-propagation: auto
+management:
+  tracing:
+    sampling:
+      probability: 1.0 # 采样率，1.0 表示 100% 采样，生产环境建议调低，如 0.1
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans # 你的 Zipkin 服务器地址
