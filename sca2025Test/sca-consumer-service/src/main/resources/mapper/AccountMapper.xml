@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.account.mapper.AccountMapper">
+
+    <!--扣减金额-->
+    <update id="deduct" parameterType="com.wittycat.components.sca.consumer.entity.Account">
+        update
+            account
+        set money=money - #{money,jdbcType=DOUBLE},
+            update_date=#{updateDate,jdbcType=TIMESTAMP}
+        where user_id = #{userId,jdbcType=INTEGER};
+    </update>
+
+    <!--恢复金额-->
+    <update id="refund" parameterType="com.wittycat.components.sca.consumer.entity.Account">
+        update
+            account
+        set money=money + #{money,jdbcType=DOUBLE},
+            update_date=#{updateDate,jdbcType=TIMESTAMP}
+        where user_id = #{userId,jdbcType=INTEGER};
+    </update>
+</mapper>

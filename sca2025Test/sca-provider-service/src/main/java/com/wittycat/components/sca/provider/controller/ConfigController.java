@@ -1,4 +1,4 @@
-package com.wittycat.components.sca.provider;
+package com.wittycat.components.sca.provider.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

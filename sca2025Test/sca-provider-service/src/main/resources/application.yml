@@ -8,6 +8,11 @@ server:
 spring:
   application:
     name: provider-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/test0702?characterEncoding=UTF-8&useSSL=false&useUnicode=true&serverTimezone=UTC
+    username: root
+    password: 123@$abc
+    driver-class-name: com.mysql.cj.jdbc.Driver
   cloud:
     nacos:
       discovery:
@@ -17,15 +22,14 @@ spring:
         username: nacos   # 检查这里
         password: nacos    # 检查这里
       config:
+        server-addr: 127.0.0.1:8848   # Nacos 服务端地址
         username: nacos   # 检查这里
         password: nacos    # 检查这里
-        server-addr: 127.0.0.1:8848   # Nacos 服务端地址
         file-extension: yaml          # 配置文件格式（必须与 Nacos 中创建的一致）
+        refresh-enabled: true
   config:
     import:
-      - optional:nacos:provider-service.yaml?refresh=true
-#  reactor:
-#    context-propagation: auto
+      - optional:nacos:provider-service.yaml?group=DEFAULT_GROUP&refresh=true
 management:
   tracing:
     sampling:
@@ -33,3 +37,31 @@ management:
   zipkin:
     tracing:
       endpoint: http://localhost:9411/api/v2/spans # 你的 Zipkin 服务器地址
+seata:
+  tx-service-group: default_tx_group    # 事务分组，与 Seata Server 配置保持一致
+  service:
+    vgroup-mapping:
+      default_tx_group: default  # key 为 tx-service-group 的值
+  config:
+    type: nacos
+    nacos:
+      server-addr: 127.0.0.1:8848
+      group: SEATA_GROUP
+      data-id: seata.properties  #默认这个名字 和nacos上的对应
+      username: nacos
+      password: nacos
+  registry:
+    type: nacos
+    nacos:
+      server-addr: 127.0.0.1:8848
+      namespace: public
+      group: SEATA_GROUP
+      username: nacos
+      password: nacos
+      cluster: default
+mybatis:
+  type-aliases-package: com.wittycat.components.sca.provider.entity
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    #采用驼峰形式将数据表中以‘_’分隔的字段映射到java类的某个属性,比如表字段user_name可以映射为类里面的userName属性
+    map-underscore-to-camel-case: true #支持驼峰映射

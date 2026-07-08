@@ -1,4 +1,4 @@
-package com.wittycat.components.sca.consumer;
+package com.wittycat.components.sca.consumer.ext;
 
 import feign.RequestInterceptor;
 import io.micrometer.tracing.Span;

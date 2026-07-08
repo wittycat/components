@@ -1,5 +1,6 @@
-package com.wittycat.components.sca.consumer;
+package com.wittycat.components.sca.consumer.controller;
 
+import com.wittycat.components.sca.consumer.client.HelloFeignClient;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
