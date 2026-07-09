@@ -1,6 +1,6 @@
 package com.wittycat.components.sca.consumer.controller;
 
-import com.wittycat.components.sca.consumer.client.HelloFeignClient;
+import com.wittycat.components.sca.consumer.client.ProviderService;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +22,7 @@ import java.util.List;
 public class CallController {
 
     @Autowired
-    private HelloFeignClient helloFeignClient;
+    private ProviderService providerService;
     @Autowired
     private DiscoveryClient discoveryClient;
 
@@ -33,7 +33,7 @@ public class CallController {
         for (ServiceInstance serviceInstance:instances) {
             log.info("instances_info  serviceId={}  host={} ",serviceInstance.getServiceId(),serviceInstance.getHost());
         }
-        String result = helloFeignClient.sayHello(name);
+        String result = providerService.sayHello(name);
         log.info("name={}, result={}  ",name,result);
         return result;
     }

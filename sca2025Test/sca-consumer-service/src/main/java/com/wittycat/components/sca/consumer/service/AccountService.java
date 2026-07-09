@@ -1,9 +1,8 @@
 package com.wittycat.components.sca.consumer.service;
 
-import io.seata.rm.tcc.api.BusinessActionContext;
-import io.seata.rm.tcc.api.BusinessActionContextParameter;
-import io.seata.rm.tcc.api.LocalTCC;
-import io.seata.rm.tcc.api.TwoPhaseBusinessAction;
+
+import org.apache.seata.rm.tcc.api.BusinessActionContext;
+import org.apache.seata.rm.tcc.api.LocalTCC;
 
 @LocalTCC
 public interface AccountService {
@@ -12,16 +11,13 @@ public interface AccountService {
      *
      * @param userId 用户ID
      * @param money  扣减金额
-     * @TwoPhaseBusinessAction注解中的name属性要与当前方法名一致,用于指定Try逻辑对应的方法
-     * @TwoPhaseBusinessAction注解中的commitMethod属性要与提交方法名一致,用于指定提交逻辑对应的方法
-     * @TwoPhaseBusinessAction注解中的rollbackMethod属性要与回滚方法名一致,用于指定回滚逻辑对应的方法
      */
-    @TwoPhaseBusinessAction(name = "deduct", commitMethod = "confirm", rollbackMethod = "cancel")
-    void deduct(@BusinessActionContextParameter(paramName = "userId") Integer userId,
-                @BusinessActionContextParameter(paramName = "productId") Integer productId,
-                @BusinessActionContextParameter(paramName = "count") Integer count,
-                @BusinessActionContextParameter(paramName = "money") Double money);
-
+    boolean deduct(
+            BusinessActionContext actionContext,
+            Integer userId,
+            Integer productId,
+            Integer count,
+            Double money);
     /**
      * 二阶段confirm确认方法、可以另命名，但要保证与commitMethod一致
      *

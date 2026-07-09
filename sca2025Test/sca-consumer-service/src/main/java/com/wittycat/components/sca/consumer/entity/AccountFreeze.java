@@ -1,8 +1,14 @@
 package com.wittycat.components.sca.consumer.entity;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class AccountFreeze {
 
     private String xid;

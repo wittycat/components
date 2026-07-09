@@ -1,13 +1,14 @@
 package com.wittycat.components.sca.consumer.controller;
 
-import com.wittycat.components.sca.consumer.client.ProductService;
+import com.wittycat.components.sca.consumer.client.ProviderService;
 import com.wittycat.components.sca.consumer.service.AccountService;
-import io.seata.spring.annotation.GlobalTransactional;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.seata.spring.annotation.GlobalTransactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-
+@Slf4j
 @RestController
 @RequestMapping("/account")
 public class AccountController {
@@ -16,7 +17,7 @@ public class AccountController {
     private AccountService accountService;
 
     @Autowired
-    private ProductService productService;
+    private ProviderService providerService;
 
     /**
      * 修改用户账户信息
@@ -26,8 +27,10 @@ public class AccountController {
     @RequestMapping("/deduct")
     @GlobalTransactional
     public void deduct(int userId, int productId, int count, double money) {
-        accountService.deduct(userId, productId, count, money);
-        productService.deduct(productId, userId, count);
+        boolean deduct = accountService.deduct(null,userId, productId, count, money);
+        log.info("deduct="+deduct);
+        String deduct1 = providerService.deduct(productId, userId, count);
+        log.info("deduct1="+deduct1);
     }
 
 }

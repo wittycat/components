@@ -1,11 +1,13 @@
 package com.wittycat.components.sca.provider.controller;
 
 import com.wittycat.components.sca.provider.service.ProductService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequestMapping("/product")
 public class ProductController {
@@ -21,8 +23,9 @@ public class ProductController {
      * @return
      */
     @RequestMapping("/deduct")
-    public void deduct(@RequestParam("productId") int productId, @RequestParam("userId") int userId, @RequestParam("productNum") int productNum) {
-        System.out.println("ProductController 开始执行");
-        productService.deduct(productId, userId, productNum);
+    public boolean deduct(@RequestParam("productId") int productId, @RequestParam("userId") int userId, @RequestParam("productNum") int productNum) {
+       log.info("ProductController 开始执行");
+        boolean deduct= productService.deduct(null,productId, userId, productNum);
+        return deduct;
     }
 }

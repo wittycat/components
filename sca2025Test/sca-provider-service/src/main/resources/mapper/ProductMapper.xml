@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.wittycat.components.sca.provider.mapper.ProductMapper">
+
+    <!--扣减金额-->
+    <update id="deduct" parameterType="com.wittycat.components.sca.provider.entity.Product">
+        update
+            product
+        set product_num=product_num - #{productNum,jdbcType=INTEGER}
+        where id = #{id,jdbcType=INTEGER};
+    </update>
+
+    <!--恢复金额-->
+    <update id="refund" parameterType="com.wittycat.components.sca.provider.entity.Product">
+        update
+            product
+        set product_num=product_num + #{productNum,jdbcType=INTEGER}
+        where id = #{id,jdbcType=INTEGER};
+    </update>
+
+</mapper>

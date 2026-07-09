@@ -1,15 +1,10 @@
-# 方式一给类注入属性：类注解上有ServerProperties  @ConfigurationProperties("server")
 server:
   port: 8081
-# 方式二：给属性注入默认值  @Value("${demo.config.message:默认消息}")
-#demo:
-#  config:
-#    message: 这是 Nacos 配置中心动态刷新的消息！时间戳：{随机数字}
 spring:
   application:
     name: provider-service
   datasource:
-    url: jdbc:mysql://localhost:3306/test0702?characterEncoding=UTF-8&useSSL=false&useUnicode=true&serverTimezone=UTC
+    url: jdbc:mysql://localhost:3306/product?characterEncoding=UTF-8&useSSL=false&useUnicode=true&serverTimezone=UTC
     username: root
     password: 123@$abc
     driver-class-name: com.mysql.cj.jdbc.Driver
