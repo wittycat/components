@@ -15,4 +15,8 @@ public interface ProviderService {
 
     @RequestMapping(value = "/product/deduct")
     String deduct(@RequestParam("productId") int productId, @RequestParam("userId") int userId, @RequestParam("productNum") int productNum);
+
+    @RequestMapping(value = "/atproduct/atdeduct")
+    String atDeduct(@RequestParam("productId") int productId, @RequestParam("userId") int userId, @RequestParam("productNum") int productNum);
+
 }

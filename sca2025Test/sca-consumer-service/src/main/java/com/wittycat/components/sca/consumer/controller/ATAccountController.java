@@ -1,7 +1,7 @@
 package com.wittycat.components.sca.consumer.controller;
 
 import com.wittycat.components.sca.consumer.client.ProviderService;
-import com.wittycat.components.sca.consumer.service.TCCAccountService;
+import com.wittycat.components.sca.consumer.service.ATAccountService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seata.spring.annotation.GlobalTransactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,11 +10,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
-@RequestMapping("/account")
-public class TCCAccountController {
+@RequestMapping("/account2")
+public class ATAccountController {
 
     @Autowired
-    private TCCAccountService tccAccountService;
+    private ATAccountService atAccountService;
 
     @Autowired
     private ProviderService providerService;
@@ -24,12 +24,12 @@ public class TCCAccountController {
      *
      * @return
      */
-    @RequestMapping("/deduct")
+    @RequestMapping("/deduct-at")
     @GlobalTransactional
     public void deduct(int userId, int productId, int count, double money) {
-        boolean deduct = tccAccountService.deduct(null,userId, productId, count, money);
+        boolean deduct = atAccountService.deduct(userId, productId, count, money);
         log.info("deduct="+deduct);
-        String deduct1 = providerService.deduct(productId, userId, count);
+        String deduct1 = providerService.atDeduct(productId, userId, count);
         log.info("deduct1="+deduct1);
     }
 

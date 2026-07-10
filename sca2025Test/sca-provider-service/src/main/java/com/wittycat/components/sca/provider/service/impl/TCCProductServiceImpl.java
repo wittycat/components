@@ -1,9 +1,10 @@
-package com.wittycat.components.sca.provider.service;
+package com.wittycat.components.sca.provider.service.impl;
 
 import com.wittycat.components.sca.provider.entity.Product;
 import com.wittycat.components.sca.provider.entity.ProductFreeze;
 import com.wittycat.components.sca.provider.mapper.ProductFreezeMapper;
 import com.wittycat.components.sca.provider.mapper.ProductMapper;
+import com.wittycat.components.sca.provider.service.TCCProductService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seata.core.context.RootContext;
 import org.apache.seata.rm.tcc.api.BusinessActionContext;
@@ -46,7 +47,7 @@ public class TCCProductServiceImpl implements TCCProductService {
         log.info("产品名称:" + productName);
         //1、获取事务id
         String xid = RootContext.getXID();
-        log.info("产品名称:" + productName + ";事务ID:" + xid);
+        log.info("产品名称:" + productName + ";事务ID:" + xid+" BranchType="+RootContext.getBranchType().name());
         //2、判断freeze中是否有冻结记录,如果有则一定是CANCEL执行过,需要要拒绝业务
         ProductFreeze oldFreeze = productFreezeMapper.selectById(xid);
 

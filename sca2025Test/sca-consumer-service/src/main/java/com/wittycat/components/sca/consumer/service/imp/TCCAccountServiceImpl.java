@@ -53,7 +53,7 @@ public class TCCAccountServiceImpl implements TCCAccountService {
         //1、获取事务id
         String xid = RootContext.getXID();
 
-        log.info("地址名称:" + name + ";事务ID:" + xid);
+        log.info("产品名称:" + name + ";事务ID:" + xid+" BranchType="+RootContext.getBranchType().name());
 
         //2、判断freeze中是否有冻结记录。如果有则一定是CANCEL执行过,需要要拒绝业务
         AccountFreeze oldFreeze = accountFreezeMapper.selectById(xid);
