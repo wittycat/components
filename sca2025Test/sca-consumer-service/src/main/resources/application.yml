@@ -11,6 +11,15 @@ spring:
         # 开启自动注册，缺省容易报错
         username: nacos   # 检查这里
         password: nacos    # 检查这里
+      config:
+        server-addr: 127.0.0.1:8848   # Nacos 服务端地址
+        username: nacos   # 检查这里
+        password: nacos    # 检查这里
+        file-extension: yaml          # 配置文件格式（必须与 Nacos 中创建的一致）
+        refresh-enabled: true
+  config:
+    import:
+      - optional:nacos:consumer-service.yaml?group=DEFAULT_GROUP&refresh=true
   datasource:
     url: jdbc:mysql://localhost:3306/account?characterEncoding=UTF-8&useSSL=false&useUnicode=true&serverTimezone=UTC
     username: root

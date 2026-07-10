@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.seata.core.context.RootContext;
 import org.apache.seata.rm.tcc.api.BusinessActionContext;
 import org.apache.seata.rm.tcc.api.BusinessActionContextParameter;
+import org.apache.seata.rm.tcc.api.LocalTCC;
 import org.apache.seata.rm.tcc.api.TwoPhaseBusinessAction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,9 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 
-@Service
-@RefreshScope
 @Slf4j
+@LocalTCC
+@RefreshScope
+@Service
 public class AccountServiceImpl implements AccountService {
 
 
@@ -97,7 +99,7 @@ public class AccountServiceImpl implements AccountService {
                 .xid(xid)
                 .state(AccountFreeze.State.CONFIRM).build();
         int count = accountFreezeMapper.updateById(freeze);
-        log.info("地址名称:%s;提交完成,count=%d",name,count);
+        log.info("地址名称:{};提交完成,count={}",name,count);
         return count > 0;
     }
 

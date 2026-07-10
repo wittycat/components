@@ -61,9 +61,9 @@ public class ProductServiceImpl implements ProductService {
         account.setProductNum(freezeNum);
         account.setId(productId);
         productMapper.deduct(account);
-        if (1 == 1) {
-            throw new RuntimeException("模拟异常");
-        }
+//        if (1 == 1) {
+//            throw new RuntimeException("模拟异常");
+//        }
         //4、冻结表记录冻结数量、事务状态
         ProductFreeze freeze = new ProductFreeze();
         freeze.setUserId(userId);

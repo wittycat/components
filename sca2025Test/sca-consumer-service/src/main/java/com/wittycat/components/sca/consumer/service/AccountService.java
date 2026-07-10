@@ -2,9 +2,8 @@ package com.wittycat.components.sca.consumer.service;
 
 
 import org.apache.seata.rm.tcc.api.BusinessActionContext;
-import org.apache.seata.rm.tcc.api.LocalTCC;
 
-@LocalTCC
+
 public interface AccountService {
     /**
      * try逻辑
