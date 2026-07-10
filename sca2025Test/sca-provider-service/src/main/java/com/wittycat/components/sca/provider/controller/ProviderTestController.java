@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @Slf4j
-public class HelloController {
+public class ProviderTestController {
 
     @Value("${server.port}")
     private int port;

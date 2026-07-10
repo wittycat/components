@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @LocalTCC
 @RefreshScope
-public class ProductServiceImpl implements ProductService {
+public class TCCProductServiceImpl implements TCCProductService {
 
     @Value("${product.name:商品库存服务}")
     private String productName = "";

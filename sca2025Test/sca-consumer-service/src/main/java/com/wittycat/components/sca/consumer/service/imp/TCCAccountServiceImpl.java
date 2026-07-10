@@ -1,9 +1,10 @@
-package com.wittycat.components.sca.consumer.service;
+package com.wittycat.components.sca.consumer.service.imp;
 
 import com.wittycat.components.sca.consumer.entity.Account;
 import com.wittycat.components.sca.consumer.entity.AccountFreeze;
 import com.wittycat.components.sca.consumer.mapper.AccountFreezeMapper;
 import com.wittycat.components.sca.consumer.mapper.AccountMapper;
+import com.wittycat.components.sca.consumer.service.TCCAccountService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seata.core.context.RootContext;
 import org.apache.seata.rm.tcc.api.BusinessActionContext;
@@ -22,7 +23,7 @@ import java.util.Date;
 @LocalTCC
 @RefreshScope
 @Service
-public class AccountServiceImpl implements AccountService {
+public class TCCAccountServiceImpl implements TCCAccountService {
 
 
     @Value("${address.name:账户服务}")

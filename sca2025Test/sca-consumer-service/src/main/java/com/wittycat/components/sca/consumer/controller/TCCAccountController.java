@@ -1,7 +1,7 @@
 package com.wittycat.components.sca.consumer.controller;
 
 import com.wittycat.components.sca.consumer.client.ProviderService;
-import com.wittycat.components.sca.consumer.service.AccountService;
+import com.wittycat.components.sca.consumer.service.TCCAccountService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seata.spring.annotation.GlobalTransactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequestMapping("/account")
-public class AccountController {
+public class TCCAccountController {
 
     @Autowired
-    private AccountService accountService;
+    private TCCAccountService accountService;
 
     @Autowired
     private ProviderService providerService;

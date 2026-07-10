@@ -19,7 +19,7 @@ import java.util.List;
  */
 @RestController
 @Slf4j
-public class CallController {
+public class ConsumerTestController {
 
     @Autowired
     private ProviderService providerService;
@@ -39,7 +39,7 @@ public class CallController {
     }
 
     @GetMapping("/test-log")
-    public String test() {
+    public String testLog() {
         // 手动塞入测试数据
         MDC.put("traceId", "TEST-12345");
         MDC.put("spanId", "TEST-67890");

@@ -3,7 +3,7 @@ package com.wittycat.components.sca.provider.service;
 import org.apache.seata.rm.tcc.api.BusinessActionContext;
 
 
-public interface ProductService {
+public interface TCCProductService {
     /**
      * try逻辑
      */

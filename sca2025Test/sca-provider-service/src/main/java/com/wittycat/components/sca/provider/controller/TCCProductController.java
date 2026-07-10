@@ -1,6 +1,6 @@
 package com.wittycat.components.sca.provider.controller;
 
-import com.wittycat.components.sca.provider.service.ProductService;
+import com.wittycat.components.sca.provider.service.TCCProductService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,10 +10,10 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequestMapping("/product")
-public class ProductController {
+public class TCCProductController {
 
     @Autowired
-    private ProductService productService;
+    private TCCProductService productService;
 
     /**
      * 根据产品ID更新产品信息
