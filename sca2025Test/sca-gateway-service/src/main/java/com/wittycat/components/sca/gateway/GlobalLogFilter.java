@@ -3,7 +3,7 @@ package com.wittycat.components.sca.gateway;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
-import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -15,7 +15,8 @@ import reactor.core.publisher.Mono;
  */
 @Slf4j
 @Component
-public class GlobalLogFilter implements GlobalFilter, Ordered {
+@Order(-100)
+public class GlobalLogFilter implements GlobalFilter {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -34,10 +35,4 @@ public class GlobalLogFilter implements GlobalFilter, Ordered {
             log.info("【请求结束】{} {}，状态码：{}，耗时：{} ms", method, path, status, duration);
         }));
     }
-
-    @Override
-    public int getOrder() {
-        return -1; // 最高优先级
-    }
-
 }

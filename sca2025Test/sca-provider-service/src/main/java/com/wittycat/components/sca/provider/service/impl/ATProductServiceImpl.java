@@ -33,9 +33,6 @@ public class ATProductServiceImpl implements ATProductService {
         account.setProductNum(freezeNum);
         account.setId(productId);
         productMapper.deduct(account);
-        if (1 == 1) {
-            throw new RuntimeException("模拟异常");
-        }
         log.info("产品名称:" + productName + ";冻结完成");
         return true;
     }

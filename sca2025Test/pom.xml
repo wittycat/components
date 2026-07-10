@@ -13,6 +13,7 @@
         <module>sca-provider-service</module>
         <module>sca-consumer-service</module>
         <module>sca-gateway-service</module>
+        <module>sca-common</module>
     </modules>
     <artifactId>sca2025Test</artifactId>
 
@@ -63,14 +64,12 @@
             <optional>true</optional>
         </dependency>
 
-
         <!-- 1. 桥接器：将 Micrometer Tracing 的追踪数据桥接到 Brave (Zipkin 的 Java 客户端) -->
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-tracing-bridge-brave</artifactId>
         </dependency>
         <!-- 2. Micrometer Tracing 核心库：micrometer-tracing 和 micrometer-core 会由上述依赖自动引入，无需重复添加 -->
-
         <!-- 3. Zipkin 报告器：负责将追踪数据发送到 Zipkin 服务器 -->
         <dependency>
             <groupId>io.zipkin.reporter2</groupId>
@@ -80,6 +79,31 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- JJWT 0.12.5 适配Spring6/Jakarta -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.12.5</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.12.5</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.12.5</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.wittycat.components</groupId>
+            <artifactId>sca-common</artifactId>
+            <version>1.0</version>
         </dependency>
     </dependencies>
 

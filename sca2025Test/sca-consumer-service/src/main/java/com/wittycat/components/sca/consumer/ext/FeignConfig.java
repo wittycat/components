@@ -3,8 +3,12 @@ package com.wittycat.components.sca.consumer.ext;
 import feign.RequestInterceptor;
 import io.micrometer.tracing.Span;
 import io.micrometer.tracing.Tracer;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
  * Created by chenxun.
@@ -37,6 +41,16 @@ public class FeignConfig {
                 template.header("X-B3-SpanId", currentSpan.context().spanId());
                 // 3. 如果有采样标记，也一并传递（可选，但建议加上）
                 template.header("X-B3-Sampled", "1");
+            }
+
+            /**
+             * JWT
+             */
+            RequestAttributes attr = RequestContextHolder.getRequestAttributes();
+            if (attr instanceof ServletRequestAttributes servletAttr) {
+                HttpServletRequest req = servletAttr.getRequest();
+                template.header("X-Login-UserId", req.getHeader("X-Login-UserId"));
+                template.header("X-User-Role", req.getHeader("X-User-Role"));
             }
         };
     }

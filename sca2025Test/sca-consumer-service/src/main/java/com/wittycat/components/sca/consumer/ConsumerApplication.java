@@ -10,7 +10,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
  * Date: 2026/6/30 21:44
  * Description:
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.wittycat.components.sca")
 @EnableDiscoveryClient
 @EnableFeignClients
 public class ConsumerApplication {

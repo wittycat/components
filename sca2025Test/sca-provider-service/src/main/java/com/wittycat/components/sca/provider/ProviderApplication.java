@@ -9,7 +9,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
  * Date: 2026/6/30 21:36
  * Description:
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.wittycat.components.sca")
 @EnableDiscoveryClient
 public class ProviderApplication {
     public static void main(String[] args) {
