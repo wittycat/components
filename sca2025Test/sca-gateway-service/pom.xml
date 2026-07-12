@@ -25,11 +25,13 @@
         官方推荐替代：spring-cloud-starter-gateway-server-webflux，纯 WebFlux 专用网关，无冗余兼容代码；
         同步拆分出 MVC 兼容版 spring-cloud-starter-gateway-server-webmvc（基于 Servlet，性能差，不推荐网关使用）。
         -->
-        <!-- Gateway 依赖（不含 Web Starter）gateway 已经过期使用webflux替代 -->
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.cloud</groupId>-->
-<!--            <artifactId>spring-cloud-starter-gateway</artifactId>-->
-<!--        </dependency>-->
+        <!--
+        Gateway 依赖（不含 Web Starter）gateway 已经过期使用webflux替代
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-gateway</artifactId>
+        </dependency>
+        -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-gateway-server-webflux</artifactId>
