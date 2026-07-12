@@ -34,6 +34,11 @@ spring:
                   - Path=/hello
                 filters:
                 # 不需要 StripPrefix，因为路径无需截断
+    sentinel:
+      transport:
+        dashboard: localhost:8858  # 指向你刚启动的 Sentinel 控制台
+        # port: 8719               # 默认8719，如被占用可修改
+        eager: true                # 建议开启，让应用启动时立即连接控制台
   reactor:
     context-propagation: auto
 management:

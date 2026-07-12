@@ -22,6 +22,11 @@ spring:
         password: nacos    # 检查这里
         file-extension: yaml          # 配置文件格式（必须与 Nacos 中创建的一致）
         refresh-enabled: true
+    sentinel:
+      transport:
+        dashboard: localhost:8858  # 指向你刚启动的 Sentinel 控制台
+        # port: 8719               # 默认8719，如被占用可修改
+        eager: true                  # 建议开启，让应用启动时立即连接控制台
   config:
     import:
       - optional:nacos:provider-service.yaml?group=DEFAULT_GROUP&refresh=true

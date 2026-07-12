@@ -54,6 +54,12 @@
             <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
         </dependency>
         -->
+        <!--        对于 gateway-service，你还需要额外添加一个 Sentinel 网关适配依赖-->
+        <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-spring-cloud-gateway-v6x-adapter</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

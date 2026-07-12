@@ -16,7 +16,7 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Component
 @Order(-100)
-public class GlobalLogFilter implements GlobalFilter {
+public class LogFilterConfig implements GlobalFilter {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
