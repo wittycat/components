@@ -22,6 +22,19 @@ spring:
        dashboard: localhost:8858  # 指向你刚启动的 Sentinel 控制台
        # port: 8719               # 默认8719，如被占用可修改
        eager: true                  # 建议开启，让应用启动时立即连接控制台
+       # OpenFeign 全局配置
+    openfeign:
+      client:
+        config:
+           default: # default 代表所有服务；也可以填order-service 指定单个服务
+             connectTimeout: 3000   # 建立连接超时 ms
+             readTimeout: 5000      # 响应读取超时 ms
+             loggerLevel: BASIC     # 日志级别 BASIC,FULL
+             # 重试配置（⚠️重点：非幂等接口关闭！）
+           provider-service:
+             connectTimeout: 3000
+             readTimeout: 5000
+             loggerLevel: BASIC
   config:
     import:
       - optional:nacos:consumer-service.yaml?group=DEFAULT_GROUP&refresh=true

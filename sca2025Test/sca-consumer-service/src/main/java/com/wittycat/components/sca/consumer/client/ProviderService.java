@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 /**
  * 用于访问Product服务的feign
  */
-@FeignClient("provider-service")
+@FeignClient(name = "provider-service" , configuration = FeignConfiguration.class)
 public interface ProviderService {
     @GetMapping("/hello")
     String sayHello(@RequestParam("name") String name);
