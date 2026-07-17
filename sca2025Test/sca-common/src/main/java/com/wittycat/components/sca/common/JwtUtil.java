@@ -24,7 +24,6 @@ import java.util.Map;
 public class JwtUtil {
     /**
      统一放到nacos
-
      jwt:
          secret: YTMyYml0c2xvbmdzZWNyZXRrZXlhYmMxMjM0NTY3ODl4eXphYmN4eXo
          expire: 7200000

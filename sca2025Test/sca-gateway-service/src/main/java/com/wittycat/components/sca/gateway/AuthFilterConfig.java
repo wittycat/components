@@ -27,7 +27,6 @@ public class AuthFilterConfig implements GlobalFilter {
 
     private final JwtUtil jwtUtil;
 
-    // 构造注入，无需@Autowired
     public AuthFilterConfig(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
     }
