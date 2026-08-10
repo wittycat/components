@@ -1,0 +1,158 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f0f2f5;
+  color: #333;
+}
+
+.container {
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 24px;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 4px;
+  color: #1a1a2e;
+}
+
+.subtitle {
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.subtitle code {
+  background: #e8e8e8;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+/* ─── 新增表单 ─── */
+.add-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.add-form input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.add-form input:focus {
+  border-color: #4096ff;
+}
+
+.add-form button {
+  padding: 10px 24px;
+  background: #1677ff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.add-form button:hover {
+  background: #4096ff;
+}
+
+/* ─── 表格 ─── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+thead {
+  background: #fafafa;
+}
+
+th, td {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 14px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+th {
+  font-weight: 600;
+  color: #555;
+}
+
+.empty {
+  text-align: center;
+  color: #bbb;
+  padding: 32px !important;
+}
+
+/* 行内编辑输入框 */
+td input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+}
+
+td input:focus {
+  border-color: #4096ff;
+}
+
+/* ─── 操作按钮 ─── */
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+.actions button {
+  padding: 5px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.actions button:hover {
+  opacity: 0.8;
+}
+
+.btn-edit {
+  background: #1677ff;
+  color: #fff;
+}
+
+.btn-delete {
+  background: #ff4d4f;
+  color: #fff;
+}
+
+.btn-save {
+  background: #52c41a;
+  color: #fff;
+}
+
+.btn-cancel {
+  background: #d9d9d9;
+  color: #333;
+}

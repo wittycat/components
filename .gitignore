@@ -3,4 +3,11 @@
 # IntelliJ IDEA
 *.iml
 .idea/
+
 /springboot/logs/
+
+/netty/target
+
+reactNodeTest/client/dist
+reactNodeTest/client/node_modules
+reactNodeTest/server/node_modules
