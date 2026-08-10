@@ -6,7 +6,7 @@
 
 /springboot/logs/
 
-/netty/target
+target/
 
 reactNodeTest/client/dist
 reactNodeTest/client/node_modules
