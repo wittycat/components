@@ -1,0 +1,5 @@
+.zcode
+
+# IntelliJ IDEA
+*.iml
+.idea/

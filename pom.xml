@@ -25,25 +25,11 @@
     </properties>
 
     <modules>
-        <module>dbcp</module>
-        <module>jedis</module>
-        <module>spring</module>
-        <module>httpClient</module>
-        <module>quartz</module>
         <module>netty</module>
-        <module>log</module>
-        <module>springboot</module>
-        <module>elastic</module>
-        <module>jgrapht</module>
         <module>rpcTest</module>
         <module>sca2025Test</module>
+        <module>springboot</module>
     </modules>
-
-    <dependencyManagement>
-    </dependencyManagement>
-
-    <dependencies>
-    </dependencies>
 
     <build>
         <plugins>
