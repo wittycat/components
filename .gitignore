@@ -15,3 +15,5 @@ reactNodeTest/server/node_modules
 /ai-agent/frontend/node_modules/
 /ai-agent/backend/src/main/resources/application-local.yml
 /ai-agent/backend/maven-settings.xml
+
+/agentScopeTest/src/main/resources/application-local.yml

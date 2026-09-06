@@ -30,6 +30,7 @@
         <module>sca2025Test</module>
         <module>springboot</module>
         <module>ai-agent/backend</module>
+        <module>agentScopeTest</module>
     </modules>
 
     <build>
