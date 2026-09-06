@@ -29,6 +29,7 @@
         <module>rpcTest</module>
         <module>sca2025Test</module>
         <module>springboot</module>
+        <module>ai-agent/backend</module>
     </modules>
 
     <build>
