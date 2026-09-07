@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.3</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.wittycat.components</groupId>
+    <artifactId>langgraph4j-test</artifactId>
+    <version>1.0</version>
+    <name>langgraph4j-test</name>
+    <description>LangGraph4j 学习示例（纯 CLI 递进式）</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>17</java.version>
+        <!-- 1.8.x 为官方 LTS 分支；1.9 尚在 beta，学习项目跟稳定版 -->
+        <langgraph4j.version>1.8.27</langgraph4j.version>
+    </properties>
+
+    <dependencies>
+        <!-- LangGraph4j 核心：StateGraph / 节点 / 条件边 / MemorySaver 全在 core 里 -->
+        <dependency>
+            <groupId>org.bsc.langgraph4j</groupId>
+            <artifactId>langgraph4j-core</artifactId>
+            <version>${langgraph4j.version}</version>
+        </dependency>
+
+        <!-- 示例 8-10 的 GlmClient 用 Jackson 序列化 OpenAI 兼容请求/响应（版本由 Boot parent 管理） -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <!-- langgraph4j 内部走 slf4j，CLI 运行时给一个最简实现，避免无 provider 告警 -->
+        <!-- LLM 示例(8~10)用:读取 glm.* 配置,沿用 agentscope-test 的 yml 约定(版本由 Boot parent 管理) -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- 让示例可以用 mvn exec:java -Dexec.mainClass=xxx 直接运行 -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
