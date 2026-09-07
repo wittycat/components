@@ -26,11 +26,12 @@
 
     <modules>
         <module>netty</module>
-        <module>rpcTest</module>
-        <module>sca2025Test</module>
+        <module>rpc-test</module>
+        <module>sca2025-test</module>
         <module>springboot</module>
         <module>ai-agent/backend</module>
-        <module>agentScopeTest</module>
+        <module>agentscope-test</module>
+        <module>langgraph4j-test</module>
     </modules>
 
     <build>
