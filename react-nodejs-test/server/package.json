@@ -1,5 +1,5 @@
 {
-  "name": "react-node-test-server",
+  "name": "react-nodejs-test-server",
   "version": "1.0.0",
   "description": "CRUD API server using data.properties",
   "main": "index.js",

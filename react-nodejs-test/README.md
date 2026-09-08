@@ -1,4 +1,4 @@
-# react-node-test — CRUD Demo
+# react-nodejs-test — CRUD Demo
 
 React + Node.js 增删改查示例，使用 `data.properties` 文件作为数据存储。
 
@@ -13,7 +13,7 @@ React + Node.js 增删改查示例，使用 `data.properties` 文件作为数据
 ## 项目结构
 
 ```
-react-node-test/
+react-nodejs-test/
 ├── data.properties          # 数据存储文件
 ├── server/                  # Express 后端
 │   └── index.js             # CRUD API 服务
@@ -26,15 +26,15 @@ react-node-test/
 
 ```bash
 # 1. 安装依赖
-cd /Users/chenxun/IdeaProjects/github/components/react-node-test
-cd react-node-test/server && npm install
-cd react-node-test/client && npm install
+cd /Users/chenxun/IdeaProjects/github/components/react-nodejs-test
+cd react-nodejs-test/server && npm install
+cd react-nodejs-test/client && npm install
 
 # 2. 启动后端（端口 3001）
-cd react-node-test/server && npm start
+cd react-nodejs-test/server && npm start
 
 # 3. 启动前端（端口 5173）
-cd react-node-test/client && npm run dev
+cd react-nodejs-test/client && npm run dev
 ```
 
 浏览器访问 `http://localhost:5173`
