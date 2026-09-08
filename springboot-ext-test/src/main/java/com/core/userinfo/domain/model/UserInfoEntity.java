@@ -1,30 +1,17 @@
-package com.core.test0812.infrastructure.persistence;
-
-import com.baomidou.mybatisplus.annotation.*;
+package com.core.userinfo.domain.model;
 
 import java.time.LocalDateTime;
 
 /**
- * 0812测试表 - 持久化对象（PO）
+ * 用户信息表 - 领域实体
  */
-@TableName("t_0812")
-public class Test0812PO {
+public class UserInfoEntity {
 
-    @TableId(type = IdType.AUTO)
     private Long id;
-
     private String name;
-
     private String description;
-
-    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
-
-    @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
-
-    @TableLogic
-    private Integer deleted;
 
     public Long getId() {
         return id;
@@ -64,13 +51,5 @@ public class Test0812PO {
 
     public void setUpdateTime(LocalDateTime updateTime) {
         this.updateTime = updateTime;
-    }
-
-    public Integer getDeleted() {
-        return deleted;
-    }
-
-    public void setDeleted(Integer deleted) {
-        this.deleted = deleted;
     }
 }

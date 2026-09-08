@@ -8,8 +8,8 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>springboot</artifactId>
-    <name>springboot</name>
+    <artifactId>springboot-ext-test</artifactId>
+    <name>springboot-ext-test</name>
 
     <properties>
         <java.version>17</java.version>

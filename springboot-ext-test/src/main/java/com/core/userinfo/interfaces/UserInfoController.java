@@ -1,68 +1,68 @@
-package com.core.test0812.interfaces;
+package com.core.userinfo.interfaces;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.core.foundation.model.Result;
-import com.core.test0812.application.Test0812ApplicationService;
-import com.core.test0812.application.dto.Test0812DTO;
-import com.core.test0812.domain.model.Test0812Entity;
-import com.core.test0812.interfaces.request.CreateTest0812Request;
-import com.core.test0812.interfaces.request.UpdateTest0812Request;
+import com.core.userinfo.application.UserInfoApplicationService;
+import com.core.userinfo.application.dto.UserInfoDTO;
+import com.core.userinfo.domain.model.UserInfoEntity;
+import com.core.userinfo.interfaces.request.CreateUserInfoRequest;
+import com.core.userinfo.interfaces.request.UpdateUserInfoRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 0812测试表 - 接口层
+ * 用户信息表 - 接口层
  */
-@Tag(name = "0812测试表", description = "t_0812 增删改查接口")
+@Tag(name = "用户信息表", description = "t_user_info 增删改查接口")
 @RestController
-@RequestMapping("/api/test0812")
-public class Test0812Controller {
+@RequestMapping("/api/userinfo")
+public class UserInfoController {
 
-    private final Test0812ApplicationService test0812ApplicationService;
+    private final UserInfoApplicationService userInfoApplicationService;
 
-    public Test0812Controller(Test0812ApplicationService test0812ApplicationService) {
-        this.test0812ApplicationService = test0812ApplicationService;
+    public UserInfoController(UserInfoApplicationService userInfoApplicationService) {
+        this.userInfoApplicationService = userInfoApplicationService;
     }
 
     @Operation(summary = "分页查询")
     @GetMapping
-    public Result<Page<Test0812DTO>> page(
+    public Result<Page<UserInfoDTO>> page(
             @Parameter(description = "页码", example = "1")
             @RequestParam(defaultValue = "1") int pageNum,
             @Parameter(description = "每页条数", example = "10")
             @RequestParam(defaultValue = "10") int pageSize) {
-        return Result.success(test0812ApplicationService.page(pageNum, pageSize));
+        return Result.success(userInfoApplicationService.page(pageNum, pageSize));
     }
 
     @Operation(summary = "根据ID查询")
     @GetMapping("/{id}")
-    public Result<Test0812DTO> getById(
+    public Result<UserInfoDTO> getById(
             @Parameter(description = "主键ID", example = "1")
             @PathVariable Long id) {
-        return Result.success(test0812ApplicationService.getById(id));
+        return Result.success(userInfoApplicationService.getById(id));
     }
 
     @Operation(summary = "新增")
     @PostMapping
-    public Result<Test0812DTO> create(@RequestBody CreateTest0812Request request) {
-        Test0812Entity entity = new Test0812Entity();
+    public Result<UserInfoDTO> create(@RequestBody CreateUserInfoRequest request) {
+        UserInfoEntity entity = new UserInfoEntity();
         entity.setName(request.name());
         entity.setDescription(request.description());
-        return Result.success(test0812ApplicationService.create(entity));
+        return Result.success(userInfoApplicationService.create(entity));
     }
 
     @Operation(summary = "修改")
     @PutMapping("/{id}")
-    public Result<Test0812DTO> update(
+    public Result<UserInfoDTO> update(
             @Parameter(description = "主键ID", example = "1")
             @PathVariable Long id,
-            @RequestBody UpdateTest0812Request request) {
-        Test0812Entity entity = new Test0812Entity();
+            @RequestBody UpdateUserInfoRequest request) {
+        UserInfoEntity entity = new UserInfoEntity();
         entity.setName(request.name());
         entity.setDescription(request.description());
-        return Result.success(test0812ApplicationService.update(id, entity));
+        return Result.success(userInfoApplicationService.update(id, entity));
     }
 
     @Operation(summary = "删除")
@@ -70,7 +70,7 @@ public class Test0812Controller {
     public Result<Void> delete(
             @Parameter(description = "主键ID", example = "1")
             @PathVariable Long id) {
-        test0812ApplicationService.delete(id);
+        userInfoApplicationService.delete(id);
         return Result.success();
     }
 }

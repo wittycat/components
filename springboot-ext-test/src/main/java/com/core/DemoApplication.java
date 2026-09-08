@@ -11,7 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * Description:
  */
 @SpringBootApplication
-@MapperScan("com.core.test0812.infrastructure.persistence")
+@MapperScan("com.core.userinfo.infrastructure.persistence")
 public class DemoApplication {
     public static void main(String[] args) {
         SpringApplication.run(DemoApplication.class, args);

@@ -1,11 +1,11 @@
-package com.core.test0812.application.dto;
+package com.core.userinfo.application.dto;
 
 import java.time.LocalDateTime;
 
 /**
- * 0812测试表 - 数据传输对象
+ * 用户信息表 - 数据传输对象
  */
-public record Test0812DTO(
+public record UserInfoDTO(
         Long id,
         String name,
         String description,
