@@ -8,9 +8,9 @@
 
 target/
 
-react-node-test/client/dist
-react-node-test/client/node_modules
-react-node-test/server/node_modules
+react-nodejs-test/client/dist
+react-nodejs-test/client/node_modules
+react-nodejs-test/server/node_modules
 
 /ai-knowledge-base-test/frontend/node_modules/
 /ai-knowledge-base-test/backend/maven-settings.xml
