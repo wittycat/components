@@ -4,7 +4,7 @@
 *.iml
 .idea/
 
-/springboot/logs/
+/springboot-ext-test/logs/
 
 target/
 

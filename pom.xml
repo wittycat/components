@@ -28,7 +28,7 @@
         <module>netty</module>
         <module>rpc-test</module>
         <module>sca2025-test</module>
-        <module>springboot</module>
+        <module>springboot-ext-test</module>
         <module>ai-knowledge-base-test/backend</module>
         <module>agentscope-test</module>
         <module>langgraph4j-test</module>
