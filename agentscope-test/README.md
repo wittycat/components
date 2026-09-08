@@ -7,7 +7,7 @@
 ## 环境准备(只做一次)
 
 1. **JDK 17+**、Maven 3.9+
-2. **配置智谱 API Key**(推荐方式):编辑 `src/main/resources/application-local.yml`(该文件已被 `.gitignore` 排除,不会提交),填入你的 key(就是 `ai-agent/backend` 里那个):
+2. **配置智谱 API Key**(推荐方式):编辑 `src/main/resources/application-local.yml`(该文件已被 `.gitignore` 排除,不会提交),填入你的 key(就是 `ai-knowledge-base-test/backend` 里那个):
 
 ```yaml
 glm:
