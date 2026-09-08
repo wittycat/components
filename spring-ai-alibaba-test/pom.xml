@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.3</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.wittycat.components</groupId>
+    <artifactId>spring-ai-alibaba-test</artifactId>
+    <version>1.0</version>
+    <name>spring-ai-alibaba-test</name>
+    <description>Spring AI Alibaba 学习示例（DashScope 接入 + Graph 编排 + ReactAgent）</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>17</java.version>
+        <!-- 1.1.x 是配套 Spring Boot 3.5 的稳定线;2.0.x 面向 Spring Boot 4,暂不跟进。
+             注意:Spring AI Alibaba 1.1.2.x 锁定 Spring AI 1.1.2,由下面的两个 BOM 统一管理,
+             不要再单独 import 更高版本的 spring-ai-bom(会和 agent-framework 编译时的 API 不一致) -->
+        <spring-ai-alibaba.version>1.1.2.3</spring-ai-alibaba.version>
+        <spring-ai-alibaba-extensions.version>1.1.2.1</spring-ai-alibaba-extensions.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Spring AI Alibaba 框架 BOM:graph-core / agent-framework / studio / a2a 等 -->
+            <dependency>
+                <groupId>com.alibaba.cloud.ai</groupId>
+                <artifactId>spring-ai-alibaba-bom</artifactId>
+                <version>${spring-ai-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- 模型接入在独立的 extensions 仓库单独发版(DashScope starter 等),版本线和框架不同步 -->
+            <dependency>
+                <groupId>com.alibaba.cloud.ai</groupId>
+                <artifactId>spring-ai-alibaba-extensions-bom</artifactId>
+                <version>${spring-ai-alibaba-extensions.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- DashScope(通义)模型接入:走 DashScope 原生 API,暴露 Qwen 全部能力
+             (思考模式/多模态/embedding/语音等)。这是它和 spring-ai-test 用
+             spring-ai-starter-model-openai + OpenAI 兼容端点直连的最大差异 -->
+        <dependency>
+            <groupId>com.alibaba.cloud.ai</groupId>
+            <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
+        </dependency>
+
+        <!-- Agent 框架:ReactAgent、多 Agent 模式(Supervisor/路由/并行),内含 graph-core -->
+        <dependency>
+            <groupId>com.alibaba.cloud.ai</groupId>
+            <artifactId>spring-ai-alibaba-agent-framework</artifactId>
+        </dependency>
+
+        <!-- Web 示例(示例 6):Spring MVC + SSE 流式接口 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- 纯 main 示例用:CLI 示例不启动 Spring,用 SnakeYAML 手动读 dashscope.* 配置(沿用仓库约定) -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Web 示例用 mvn spring-boot:run 启动 -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- 让示例可以用 mvn exec:java -Dexec.mainClass=xxx 直接运行 -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

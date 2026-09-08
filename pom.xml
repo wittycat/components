@@ -34,6 +34,7 @@
         <module>langgraph4j-test</module>
         <module>langchain4j-test</module>
         <module>spring-ai-test</module>
+        <module>spring-ai-alibaba-test</module>
     </modules>
 
     <build>
