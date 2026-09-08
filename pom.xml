@@ -33,6 +33,7 @@
         <module>agentscope-test</module>
         <module>langgraph4j-test</module>
         <module>langchain4j-test</module>
+        <module>spring-ai-test</module>
     </modules>
 
     <build>

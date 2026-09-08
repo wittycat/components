@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.3</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.wittycat.components</groupId>
+    <artifactId>spring-ai-test</artifactId>
+    <version>1.0</version>
+    <name>spring-ai-test</name>
+    <description>Spring AI 学习示例（CLI 递进式 + Web SSE）</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>17</java.version>
+        <!-- 1.1.x 是配套 Spring Boot 3.5 的稳定线；2.0+ 面向 Spring Boot 4，
+             想升级时要把父工程 parent 和这个属性一起换 -->
+        <spring-ai.version>1.1.8</spring-ai.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Spring AI 官方 BOM：统一全家桶版本，后面的 starter 不用再写 version -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- Spring AI OpenAI starter：自动配置 ChatModel / EmbeddingModel / ChatClient.Builder。
+             智谱 GLM 提供 OpenAI 兼容端点，base-url 指过去即可，换 DeepSeek/Kimi 只改配置 -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-openai</artifactId>
+        </dependency>
+
+        <!-- 向量存储抽象 + 内存实现 SimpleVectorStore（示例 7/8 的 RAG 用；
+             1.1 起拆成独立构件，starter 不再默认带上。生产换 PGVector/Milvus 时换对应构件即可） -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-vector-store</artifactId>
+        </dependency>
+
+        <!-- RAG 检索 Advisor：QuestionAnswerAdvisor 自动"检索 + 拼上下文"（示例 8 用） -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-advisors-vector-store</artifactId>
+        </dependency>
+
+        <!-- 示例 9（Web SSE）：Spring MVC + Flux<ServerSentEvent>（版本由 Boot parent 管理） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- 纯 main 示例用：读取 glm.* 配置，沿用 agentscope-test / langgraph4j-test 的 yml 约定 -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Web SSE 示例用 mvn spring-boot:run 启动 -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- 让示例可以用 mvn exec:java -Dexec.mainClass=xxx 直接运行 -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

@@ -1,0 +1,19 @@
+Spring AI 是 Spring 官方推出的 AI 应用框架,目标是用 Spring 生态的惯用方式(自动配置、starter、依赖注入)简化大语言模型在 Java 应用中的集成。它提供的抽象与具体厂商解耦,换模型厂商通常只需要改配置,不需要改业务代码。
+
+ChatModel 是 Spring AI 中"对话模型"的核心接口,代表一次同步调用:发送 Prompt(消息列表 + 采样参数),返回 ChatResponse(回复消息 + token 用量等元数据)。StreamingChatModel 是流式版本,返回 Reactor 的 Flux 流逐 token 推送。spring-ai-openai 模块实现了 OpenAI 协议,把 base-url 指向智谱 GLM、DeepSeek 等兼容端点即可接入。
+
+ChatClient 是建立在 ChatModel 之上的高层门面,提供 fluent 链式 API:prompt() 开始组装请求,system() 设定系统角色,user() 提供用户消息,call() 同步拿完整回复,stream() 拿流式回复。业务代码推荐面向 ChatClient 编程,把 ChatModel 留给框架装配。
+
+Advisor 是 Spring AI 的请求/响应拦截器机制,思路类似 Servlet Filter 和 Spring AOP:ChatClient 发出的请求会依次穿过 Advisor 链,每个 Advisor 可以在请求前改写 Prompt,在响应后做后处理。记忆、RAG、日志、敏感词过滤等横切能力都做成 Advisor,按需挂载、自由组合。
+
+MessageWindowChatMemory 是内置的滑动窗口会话记忆实现,只保留最近 N 条消息,防止历史无限膨胀。MessageChatMemoryAdvisor 把记忆中的历史消息自动并入每次请求,通过会话 ID(CONVERSATION_ID)区分不同用户或会话,实现多用户互不干扰。内存实现重启即丢失,生产环境可接 Redis 等持久化。
+
+Spring AI 的工具调用通过 @Tool 注解实现:标注在普通 Java 方法上,框架自动把方法签名转成 JSON Schema 的函数描述发给模型;模型决定调用哪个工具、传什么参数,框架在本地执行方法,把结果回传给模型继续生成回答,整个循环由框架自动完成。@ToolParam 用于给参数补充描述,帮助模型更准确地填参。
+
+结构化输出让模型按 Java 类型返回数据:call().entity(Class) 会在请求里附带该类型对应的 JSON Schema(由 BeanOutputConverter 生成),模型输出 JSON 后自动反序列化成 record 或 POJO;泛型类型用 entity(ParameterizedTypeReference) 处理。业务代码直接拿到强类型对象,不用手写解析。
+
+EmbeddingModel 接口把文本转成向量(float 数组),是语义检索的坐标。VectorStore 是向量存储抽象,负责存取向量并按相似度检索,SimpleVectorStore 是基于内存的参考实现,适合学习和原型;生产环境可换 PGVector、Milvus、Redis 等实现,接口不变。similaritySearch 支持指定 topK 和相似度阈值。
+
+RAG(检索增强生成)在 Spring AI 中通过 ETL 管线入库:DocumentReader 读文档,DocumentTransformer 切分(如 TokenTextSplitter),DocumentWriter(即 VectorStore.add)向量化入库;检索侧由 QuestionAnswerAdvisor 完成,它会在每次提问前自动检索相关片段,按预置模板把资料和问题拼装后发给模型,实现"基于你的资料回答"。
+
+Spring AI 提供可观测性支持:基于 Micrometer 的观测指标和 trace,对 ChatClient 的每次调用记录耗时、token 用量等信息,可对接 Grafana、Zipkin 等监控体系,这是它在生产化方面相对其他社区框架的优势之一。

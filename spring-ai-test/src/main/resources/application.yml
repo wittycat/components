@@ -1,0 +1,37 @@
+server:
+  # ai-agent 8080、agentscope-test 8081、langgraph4j-test 预留 8082、langchain4j-test 8083,本模块的 Web SSE 示例用 8084
+  port: 8084
+
+# GLM 模型配置的默认值(可提交 git)。
+# 真实 api-key 放在 application-local.yml(已被 .gitignore 排除),不要写在这里。
+# 读取优先级:-D 系统属性 > 环境变量 > application-local.yml > 本文件
+glm:
+  api-key: demo
+  base-url: https://open.bigmodel.cn/api/coding/paas/v4
+  model: glm-5.3-flash
+  embedding-model: embedding-3
+
+spring:
+  application:
+    name: spring-ai-test
+  # 可选导入本地私密配置(已被 .gitignore 排除;没有这个文件也不报错)。
+  # 注意:application-local.yml 若按 profile 命名规则需要激活 local 才会加载,
+  # 这里用 config.import 显式引入,mvn spring-boot:run 就不用再带 -Dspring-boot.run.profiles=local
+  config:
+    import: optional:classpath:/application-local.yml
+  ai:
+    openai:
+      # Spring AI 自动配置读取 spring.ai.openai.*;这里用占位符引用 glm.*,
+      # 让 Web 示例(自动配置)和 CLI 示例(GlmConfig 手动读)共用同一份配置
+      api-key: ${glm.api-key}
+      base-url: ${glm.base-url}
+      # GLM 的 OpenAI 兼容端点路径不带 /v1 前缀,默认的 /v1/chat/completions 会 404
+      chat:
+        completions-path: /chat/completions
+        options:
+          model: ${glm.model}
+          temperature: 0.7
+      embedding:
+        embeddings-path: /embeddings
+        options:
+          model: ${glm.embedding-model}
