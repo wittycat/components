@@ -1,0 +1,17 @@
+LangChain4j 是一个开源的 Java 框架,用于简化大语言模型(LLM)在 Java 应用中的集成。它的名字来自 Python 生态的 LangChain,但 API 完全按照 Java 习惯设计。
+
+LangChain4j 的核心模块是 dev.langchain4j:langchain4j,里面包含 AiServices、ChatMemory、工具调用(@Tool)和 RAG 管线(RetrievalAugmentor)等高层 API;模型接入层放在独立模块中,例如 langchain4j-open-ai 实现了 OpenAI 协议,换 baseUrl 就能接入智谱 GLM、DeepSeek 等兼容服务。
+
+AiServices 是 LangChain4j 中最常用的 API。开发者只需要声明一个 Java 接口,AiServices 会用 JDK 动态代理生成实现,自动把聊天模型、工具、记忆、RAG 等能力组装进代理对象。
+
+ChatModel 接口代表一次性的对话模型:发送消息列表,返回完整回复。StreamingChatModel 接口代表流式对话模型,通过回调函数逐 token 推送内容,适合实现打字机效果和 SSE 推送。
+
+LangChain4j 的工具调用通过 @Tool 注解实现:把普通 Java 方法标注为工具,框架会把方法签名转成 JSON Schema 描述发给模型;模型决定调用时,框架在本地执行方法,再把结果回传给模型继续生成回答。
+
+MessageWindowChatMemory 是 LangChain4j 提供的滑动窗口记忆实现,只保留最近 N 条消息;通过 ChatMemoryProvider 可以按 memoryId(例如 sessionId)为每个会话创建独立的记忆,实现多用户互不干扰。
+
+LangChain4j 的 RAG(检索增强生成)管线分为四个阶段:查询转换(Transform)、查询路由(Route)、内容检索(Retrieve)和结果融合(Fuse)。DefaultRetrievalAugmentor 是这条管线的默认实现,每个阶段都可以自定义或替换。
+
+EmbeddingStore 是 LangChain4j 的向量存储抽象。InMemoryEmbeddingStore 把向量保存在内存中,适合学习和原型验证;生产环境可以换成 PGVector、Milvus、Elasticsearch 等实现,接口不变。
+
+CompressingQueryTransformer 是 LangChain4j 的查询转换器:在多轮对话中,它利用聊天模型和聊天历史,把"它是什么"这类指代性的追问改写成独立完整的问题,再交给检索器,从而显著提升检索准确率。
