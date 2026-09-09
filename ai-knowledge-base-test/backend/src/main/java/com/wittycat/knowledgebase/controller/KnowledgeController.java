@@ -34,7 +34,7 @@ public class KnowledgeController {
                     "message", "上传成功"
             ));
         } catch (IllegalArgumentException e) {
-            log.warn("[Knowledge] 文件上传失败（参数错误）: {}", e.getMessage());
+            log.error("[Knowledge] 文件上传失败（参数错误）", e);
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             log.error("[Knowledge] 文件上传失败", e);
@@ -58,7 +58,7 @@ public class KnowledgeController {
                     "message", "上传成功"
             ));
         } catch (IllegalArgumentException e) {
-            log.warn("[Knowledge] 文本导入失败（参数错误）: {}", e.getMessage());
+            log.error("[Knowledge] 文本导入失败（参数错误）", e);
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             log.error("[Knowledge] 文本导入失败", e);

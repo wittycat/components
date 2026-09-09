@@ -25,6 +25,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class KnowledgeDocumentStore {
 
+    /** 文档正文预览长度（字符）：knowledge_document.content 仅存摘要供列表展示，全文在分块表 */
+    private static final int CONTENT_PREVIEW_LENGTH = 200;
+
     private final KnowledgeDocumentRepository documentRepository;
     private final KnowledgeChunkRepository chunkRepository;
     private final TextChunker textChunker;
@@ -37,7 +40,8 @@ public class KnowledgeDocumentStore {
     public KnowledgeDocument saveDocumentAndChunks(String filename, String content, String contentHash) {
         KnowledgeDocument doc = new KnowledgeDocument();
         doc.setFilename(filename);
-        doc.setContent(content.length() > 200 ? content.substring(0, 200) + "..." : content);
+        doc.setContent(content.length() > CONTENT_PREVIEW_LENGTH
+                ? content.substring(0, CONTENT_PREVIEW_LENGTH) + "..." : content);
         doc.setContentHash(contentHash);
         doc = documentRepository.save(doc);
         log.info("[Store] 文档记录已保存, docId={}", doc.getId());

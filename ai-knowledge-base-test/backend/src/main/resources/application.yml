@@ -20,8 +20,8 @@ spring:
         format_sql: true
   servlet:
     multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+      max-file-size: 200MB
+      max-request-size: 200MB
 
 # 智谱 GLM 大模型配置（兼容 OpenAI 接口格式）
 glm:
@@ -34,16 +34,18 @@ glm:
 agent:
   # 对话记忆：保留最近 N 轮消息作为上下文
   memory-max-messages: 20
-  # RAG 检索返回的最大文档块数
-  rag-top-k: 3
+  # RAG 检索返回的最大文档块数（过小会导致详解类问题资料覆盖不全）
+  rag-top-k: 5
   # 向量检索相似度阈值（低于该值视为不相关，降级为关键词搜索）
   rag-similarity-threshold: 0.58
+  # 整篇文档注入预算（字符）：>0 时命中文档全文不超过该值才整篇注入；0 表示不限制，命中文档一律整篇注入
+  rag-whole-doc-max-chars: 0
   # 工具调用最大循环次数（防止无限循环）
   max-tool-iterations: 5
   # 工具执行的工作目录（Shell/文件操作限制在此目录内）
   workspace-dir: ${user.home}/ai-knowledge-base-test-workspace
-  # 知识库上传限制（防止 OOM；分块上限低于实际分块数会静默截断文档）
-  max-upload-size-kb: 20480
-  max-chunks-per-document: 3000
+  # 知识库上传限制（KB；0 = 不限制上传大小）
+  max-upload-size-kb: 0
+  max-chunks-per-document: 100000
   max-vector-search-chunks: 4000
-  max-embeddings-per-document: 3000
+  max-embeddings-per-document: 100000

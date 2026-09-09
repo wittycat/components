@@ -126,7 +126,8 @@ npm run dev
 ### RAG 流程
 
 1. 用户上传文档 → 文本分块 → 生成 Embedding 向量 → 存入 MySQL
-2. 用户提问 → 向量/关键词检索 Top-K 相关块 → 注入 System Prompt → LLM 生成回答
+2. 用户提问 → 向量/关键词检索 Top-K 相关块 → 命中文档默认整篇注入（`rag-whole-doc-max-chars`，0 = 不限制），彻底避免分块截断遗漏后文章节 → 注入 System Prompt → LLM 生成回答
+3. 上传大小默认不限制（`max-upload-size-kb: 0`，Spring multipart 上限 200MB）
 
 ### Tool Calling 流程
 

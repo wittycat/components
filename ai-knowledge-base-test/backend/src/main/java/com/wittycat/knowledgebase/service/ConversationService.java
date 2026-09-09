@@ -77,6 +77,17 @@ public class ConversationService {
             recent = allMessages.subList(allMessages.size() - maxMessages, allMessages.size());
         }
 
+        // 截断点可能落在 assistant(tool_calls) 与其 tool 响应之间：以孤儿 tool 消息开头的
+        // 消息序列会被 API 拒绝（tool 消息前必须有配对的 tool_calls），需丢弃开头连续的 tool 消息
+        int start = 0;
+        while (start < recent.size() && "tool".equals(recent.get(start).getRole())) {
+            start++;
+        }
+        if (start > 0) {
+            log.info("[Conversation] 记忆窗口开头有 {} 条孤儿 tool 消息，已丢弃", start);
+            recent = recent.subList(start, recent.size());
+        }
+
         List<ChatMessageDto> result = new ArrayList<>();
         for (Message msg : recent) {
             ChatMessageDto.ChatMessageDtoBuilder builder = ChatMessageDto.builder()
@@ -93,8 +104,8 @@ public class ConversationService {
                             objectMapper.getTypeFactory().constructCollectionType(List.class, ChatMessageDto.ToolCallDto.class));
                     builder.toolCalls(toolCalls);
                 } catch (Exception e) {
-                    log.warn("[Conversation] toolCalls JSON 反序列化失败, msgId={}: {}",
-                            msg.getId(), e.getMessage());
+                    log.error("[Conversation] toolCalls JSON 反序列化失败, msgId={}",
+                            msg.getId(), e);
                 }
             }
             result.add(builder.build());

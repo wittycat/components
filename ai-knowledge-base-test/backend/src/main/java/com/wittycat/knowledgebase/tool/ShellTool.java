@@ -24,6 +24,12 @@ public class ShellTool implements AgentTool {
 
     private final AgentConfig agentConfig;
 
+    /** 命令执行超时时间（秒） */
+    private static final int COMMAND_TIMEOUT_SECONDS = 30;
+
+    /** 命令输出最大保留长度（字符），超出截断，防止撑爆模型上下文 */
+    private static final int MAX_OUTPUT_LENGTH = 5000;
+
     /** 白名单：每个链式/管道段的首个命令都必须在列表内 */
     private static final Set<String> ALLOWED_COMMANDS = Set.of(
             "ls", "cat", "head", "tail", "wc", "find", "grep", "echo", "pwd",
@@ -104,10 +110,10 @@ public class ShellTool implements AgentTool {
         pb.environment().put("PATH", "/usr/local/bin:/usr/bin:/bin");
 
         Process process = pb.start();
-        boolean finished = process.waitFor(30, TimeUnit.SECONDS);
+        boolean finished = process.waitFor(COMMAND_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         if (!finished) {
             process.destroyForcibly();
-            return "错误：命令执行超时（30秒）";
+            return "错误：命令执行超时（" + COMMAND_TIMEOUT_SECONDS + "秒）";
         }
 
         String output;
@@ -115,8 +121,8 @@ public class ShellTool implements AgentTool {
             output = reader.lines().reduce("", (a, b) -> a.isEmpty() ? b : a + "\n" + b);
         }
 
-        if (output.length() > 5000) {
-            output = output.substring(0, 5000) + "\n...(输出已截断)";
+        if (output.length() > MAX_OUTPUT_LENGTH) {
+            output = output.substring(0, MAX_OUTPUT_LENGTH) + "\n...(输出已截断)";
         }
 
         return "退出码: " + process.exitValue() + "\n" + output;
@@ -129,7 +135,9 @@ public class ShellTool implements AgentTool {
         // 1. 按 &&、||、;、| 切分命令段（引号内的操作符不算边界），每段首命令都须在白名单内
         for (String segment : splitSegments(command.trim())) {
             String firstCommand = extractFirstCommand(segment);
-            if (firstCommand.isEmpty()) continue;
+            if (firstCommand.isEmpty()) {
+                continue;
+            }
             if (!ALLOWED_COMMANDS.contains(firstCommand)) {
                 return "该命令 '" + firstCommand + "' 不在允许的安全命令列表中。"
                         + "允许的命令: " + String.join(", ", ALLOWED_COMMANDS);
@@ -177,7 +185,9 @@ public class ShellTool implements AgentTool {
                 current.append(c);
             }
         }
-        if (current.length() > 0) segments.add(current.toString());
+        if (current.length() > 0) {
+            segments.add(current.toString());
+        }
         return segments;
     }
 
@@ -187,7 +197,9 @@ public class ShellTool implements AgentTool {
      */
     private String extractFirstCommand(String command) {
         String s = command.trim();
-        if (s.isEmpty()) return "";
+        if (s.isEmpty()) {
+            return "";
+        }
 
         // 第一个 token：到空白或操作符为止
         int end = s.length();

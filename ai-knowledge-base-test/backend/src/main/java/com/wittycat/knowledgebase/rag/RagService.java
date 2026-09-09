@@ -30,6 +30,12 @@ public class RagService {
         return documentStore.listDocuments();
     }
 
+    /** 送入 embedding 的查询文本最大长度（与分块尺寸同量级，超出截断） */
+    private static final int QUERY_EMBED_MAX_CHARS = 500;
+
+    /** 余弦相似度分母防零常量 */
+    private static final double COSINE_EPSILON = 1e-10;
+
     /**
      * 根据用户问题检索相关知识块（内存安全：不加载全表）
      */
@@ -39,10 +45,10 @@ public class RagService {
         // 文件名直连：用户点名某份知识库文档时直接取该文档分块。
         // 纯文件名查询（如 "AGENTS.md"）与正文的向量相似度天然偏低、正文也不含文件名本身，
         // 语义/关键词检索都会落空
-        List<String> byFilename = retrieveByFilename(query);
+        List<KnowledgeChunk> byFilename = retrieveByFilename(query);
         if (!byFilename.isEmpty()) {
             log.info("[RAG] 命中知识库文件名，直接返回该文档分块");
-            return byFilename;
+            return toContents(expandToWholeDocuments(byFilename));
         }
 
         int topK = agentConfig.getRagTopK();
@@ -61,37 +67,39 @@ public class RagService {
                     agentConfig.getMaxVectorSearchChunks());
             if (!embeddedChunks.isEmpty()) {
                 log.info("[RAG] 找到 {} 个带 embedding 的分块", embeddedChunks.size());
-                List<Double> queryEmbedding = glmClient.getEmbedding(truncate(query, 500));
+                List<Double> queryEmbedding = glmClient.getEmbedding(truncate(query, QUERY_EMBED_MAX_CHARS));
                 if (queryEmbedding != null) {
-                    List<String> results = vectorSearch(embeddedChunks, queryEmbedding, topK);
-                    if (!results.isEmpty()) {
-                        log.info("[RAG] 向量检索成功，返回 {} 个结果", results.size());
-                        return results;
+                    List<KnowledgeChunk> selected = vectorSearch(embeddedChunks, queryEmbedding, topK);
+                    if (!selected.isEmpty()) {
+                        log.info("[RAG] 向量检索成功，命中 {} 个结果", selected.size());
+                        return toContents(expandToWholeDocuments(selected));
                     }
                 }
             }
             log.info("[RAG] 向量检索未返回结果，降级为关键词搜索");
         }
 
-        List<String> keywordResults = keywordSearch(query, topK);
+        List<KnowledgeChunk> keywordResults = keywordSearch(query, topK);
         log.info("[RAG] 关键词搜索返回 {} 个结果", keywordResults.size());
-        return keywordResults;
+        return toContents(expandToWholeDocuments(keywordResults));
     }
 
-    private List<String> vectorSearch(List<KnowledgeChunk> chunks, List<Double> queryEmbedding, int topK) {
+    private List<KnowledgeChunk> vectorSearch(List<KnowledgeChunk> chunks, List<Double> queryEmbedding, int topK) {
         double threshold = agentConfig.getRagSimilarityThreshold();
         log.info("[RAG] 开始向量检索, 候选分块数={}, topK={}, 相似度阈值={}", chunks.size(), topK, threshold);
         List<ScoredChunk> scored = new ArrayList<>();
 
         for (KnowledgeChunk chunk : chunks) {
-            if (chunk.getEmbedding() == null) continue;
+            if (chunk.getEmbedding() == null) {
+                continue;
+            }
             try {
                 List<Double> embedding = objectMapper.readValue(chunk.getEmbedding(),
                         new TypeReference<List<Double>>() {});
                 double similarity = cosineSimilarity(queryEmbedding, embedding);
                 scored.add(new ScoredChunk(chunk, similarity));
             } catch (Exception e) {
-                log.warn("[RAG] 解析 embedding 失败, chunkId={}", chunk.getId());
+                log.error("[RAG] 解析 embedding 失败, chunkId={}", chunk.getId(), e);
             }
         }
 
@@ -107,38 +115,26 @@ public class RagService {
             return Collections.emptyList();
         }
 
-        // 邻块扩展：详解类问题通常跨多个分块，命中块的下一分块（同文档相邻、内容连续）一并带入，
-        // 避免只检索到章节前半部分；总数仍受 topK 约束
-        Map<String, KnowledgeChunk> byDocAndIndex = new HashMap<>();
-        for (KnowledgeChunk chunk : chunks) {
-            byDocAndIndex.put(chunk.getDocumentId() + "#" + chunk.getChunkIndex(), chunk);
-        }
-        List<KnowledgeChunk> selected = new ArrayList<>();
-        for (ScoredChunk hit : relevant) {
-            if (!selected.contains(hit.chunk())) {
-                selected.add(hit.chunk());
-            }
-            if (selected.size() >= topK) break;
-            KnowledgeChunk next = byDocAndIndex.get(hit.chunk().getDocumentId() + "#" + (hit.chunk().getChunkIndex() + 1));
-            if (next != null && !selected.contains(next)) {
-                selected.add(next);
-            }
-        }
-        log.info("[RAG] 向量检索完成, 命中 {} 块, 邻块扩展后共 {} 块", relevant.size(), selected.size());
-        return selected.stream().map(KnowledgeChunk::getContent).collect(Collectors.toList());
+        // 邻块补全统一放在 expandToWholeDocuments 的超预算兜底分支：此处按相关度纯取 top-K，
+        // 文档在预算内会整篇注入，不需要在此做邻块扩展
+        List<KnowledgeChunk> selected = relevant.stream()
+                .map(ScoredChunk::chunk)
+                .collect(Collectors.toList());
+        log.info("[RAG] 向量检索完成, 命中 {} 块", selected.size());
+        return selected;
     }
 
-    private List<String> keywordSearch(String query, int topK) {
+    private List<KnowledgeChunk> keywordSearch(String query, int topK) {
         log.info("[RAG] 开始关键词搜索, query='{}', topK={}", query, topK);
         // 优先 FULLTEXT 检索（ngram 分词支持中文；有限制条数，不会全表加载）
         try {
             List<KnowledgeChunk> results = chunkRepository.searchByKeyword(query, topK);
             if (!results.isEmpty()) {
                 log.info("[RAG] FULLTEXT 检索成功，返回 {} 个结果", results.size());
-                return results.stream().map(KnowledgeChunk::getContent).collect(Collectors.toList());
+                return results;
             }
         } catch (Exception e) {
-            log.warn("[RAG] FULLTEXT 检索失败，降级为 LIKE 模糊匹配: {}", e.getMessage());
+            log.error("[RAG] FULLTEXT 检索失败，降级为 LIKE 模糊匹配", e);
         }
 
         // 降级：剥离疑问词后按候选关键词逐个 LIKE 模糊匹配（仍有限制条数）
@@ -146,7 +142,7 @@ public class RagService {
             List<KnowledgeChunk> results = chunkRepository.searchByLike(keyword, topK);
             if (!results.isEmpty()) {
                 log.info("[RAG] LIKE 模糊匹配成功, 关键词='{}', 返回 {} 个结果", keyword, results.size());
-                return results.stream().map(KnowledgeChunk::getContent).collect(Collectors.toList());
+                return results;
             }
         }
 
@@ -178,43 +174,121 @@ public class RagService {
         return keywords;
     }
 
-    /** 问句中包含完整文档文件名时，返回该文档的前 topK 个分块 */
-    private List<String> retrieveByFilename(String query) {
+    /** 问句中包含完整文档文件名时，返回该文档的前 topK 个分块（后续仍会尝试整篇扩展） */
+    private List<KnowledgeChunk> retrieveByFilename(String query) {
         for (KnowledgeDocumentDto doc : documentStore.listDocuments()) {
             String name = doc.getFilename();
-            if (name == null || name.isBlank() || !query.contains(name)) continue;
+            if (name == null || name.isBlank() || !query.contains(name)) {
+                continue;
+            }
             log.info("[RAG] 问句点名文档: {}", name);
             return chunkRepository.findByDocumentIdOrderByChunkIndexAsc(doc.getId()).stream()
                     .limit(agentConfig.getRagTopK())
-                    .map(KnowledgeChunk::getContent)
                     .collect(Collectors.toList());
         }
         return Collections.emptyList();
     }
 
+    /**
+     * 整篇文档扩展：命中分块所属文档的全文不超过预算时，改为注入该文档全部分块（按 chunkIndex 顺序）。
+     * 只取 top-K 片段时，详解类问题常在分块边界处截断——文档明明写了"第 3、4 层"，
+     * 模型却只能说"资料在此处截断、未提及"。预算按文档首次命中顺序分配；装不下（超预算）的文档
+     * 退回命中分块并补上下相邻分块，保证跨块内容（列表、表格、连续段落）不断裂。
+     */
+    private List<KnowledgeChunk> expandToWholeDocuments(List<KnowledgeChunk> hits) {
+        if (hits.isEmpty()) {
+            return hits;
+        }
+        // 预算 <=0 视为不限制：命中的文档一律整篇注入（此前 "预算<=0 关闭扩展" 的语义
+        // 会静默退回纯 top-K、重新引入跨块截断，已废弃）
+        int budget = agentConfig.getRagWholeDocMaxChars() <= 0
+                ? Integer.MAX_VALUE
+                : agentConfig.getRagWholeDocMaxChars();
+
+        // 文档全部分块只需查一次；LinkedHashMap 保持首次命中（相关度）顺序
+        Map<Long, List<KnowledgeChunk>> docs = new LinkedHashMap<>();
+        for (KnowledgeChunk hit : hits) {
+            docs.computeIfAbsent(hit.getDocumentId(),
+                    docId -> new ArrayList<>(chunkRepository.findByDocumentIdOrderByChunkIndexAsc(docId)));
+        }
+
+        List<KnowledgeChunk> result = new ArrayList<>();
+        int used = 0;
+        for (Map.Entry<Long, List<KnowledgeChunk>> entry : docs.entrySet()) {
+            List<KnowledgeChunk> fullDoc = entry.getValue();
+            int docChars = fullDoc.stream()
+                    .mapToInt(c -> c.getContent() == null ? 0 : c.getContent().length())
+                    .sum();
+            if (docChars <= budget - used) {
+                used += docChars;
+                result.addAll(fullDoc);
+                log.info("[RAG] 文档 {} 全文 {} 字符在预算内，整篇注入（{} 块）",
+                        entry.getKey(), docChars, fullDoc.size());
+            } else {
+                List<KnowledgeChunk> docHits = hits.stream()
+                        .filter(c -> c.getDocumentId().equals(entry.getKey()))
+                        .collect(Collectors.toList());
+                // 超预算退回命中分块时补上下相邻分块：详解内容常跨分块边界
+                // （如四层列表前两层在块尾、后两层在下一块头），只给命中块模型只能回答"资料被截断"
+                Map<Integer, KnowledgeChunk> byIndex = new HashMap<>();
+                for (KnowledgeChunk c : fullDoc) {
+                    byIndex.put(c.getChunkIndex(), c);
+                }
+                List<KnowledgeChunk> expanded = new ArrayList<>();
+                for (KnowledgeChunk hit : docHits) {
+                    for (int idx = hit.getChunkIndex() - 1; idx <= hit.getChunkIndex() + 1; idx++) {
+                        KnowledgeChunk c = byIndex.get(idx);
+                        if (c != null && !expanded.contains(c)) {
+                            expanded.add(c);
+                        }
+                    }
+                }
+                expanded.sort(Comparator.comparingInt(KnowledgeChunk::getChunkIndex));
+                log.info("[RAG] 文档 {} 全文 {} 字符超出剩余预算 {}，保留命中分块及相邻块共 {} 块",
+                        entry.getKey(), docChars, budget - used, expanded.size());
+                result.addAll(expanded);
+            }
+        }
+        log.info("[RAG] 整篇扩展完成，共注入 {} 块（预算 {} 字符）", result.size(), budget);
+        return result;
+    }
+
+    private List<String> toContents(List<KnowledgeChunk> chunks) {
+        return chunks.stream().map(KnowledgeChunk::getContent).collect(Collectors.toList());
+    }
+
     private String truncate(String text, int maxLen) {
-        if (text == null) return "";
+        if (text == null) {
+            return "";
+        }
         return text.length() <= maxLen ? text : text.substring(0, maxLen);
     }
 
     private double cosineSimilarity(List<Double> a, List<Double> b) {
-        if (a.size() != b.size()) return 0;
+        if (a.size() != b.size()) {
+            return 0;
+        }
         double dot = 0, normA = 0, normB = 0;
         for (int i = 0; i < a.size(); i++) {
             dot += a.get(i) * b.get(i);
             normA += a.get(i) * a.get(i);
             normB += b.get(i) * b.get(i);
         }
-        return dot / (Math.sqrt(normA) * Math.sqrt(normB) + 1e-10);
+        return dot / (Math.sqrt(normA) * Math.sqrt(normB) + COSINE_EPSILON);
     }
 
     public String buildContextPrompt(List<String> chunks) {
-        if (chunks.isEmpty()) return "";
-        StringBuilder sb = new StringBuilder("以下是从知识库中检索到的相关信息：\n\n");
+        if (chunks.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder("以下是从知识库检索到的、与用户问题相关的资料（用户上传文档的片段或全文）：\n\n");
         for (int i = 0; i < chunks.size(); i++) {
             sb.append("【资料 ").append(i + 1).append("】\n").append(chunks.get(i)).append("\n\n");
         }
-        sb.append("请基于以上资料回答用户问题。如果资料中没有相关信息，请如实说明。\n");
+        sb.append("回答要求（优先级从高到低）：\n")
+                .append("1. 必须优先、严格依据以上资料回答用户问题，资料中的表述、术语、数据和结论优先于你的自身知识；\n")
+                .append("2. 资料与你已有的知识冲突时，一律以资料为准；\n")
+                .append("3. 资料未覆盖的部分，明确说明\"资料中未提及\"，不要用自身知识冒充资料内容；如需补充，须注明是资料之外的通用知识。\n");
         return sb.toString();
     }
 

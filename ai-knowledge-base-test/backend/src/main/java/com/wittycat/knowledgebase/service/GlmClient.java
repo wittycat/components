@@ -30,6 +30,21 @@ public class GlmClient {
             .connectTimeout(Duration.ofSeconds(30))
             .build();
 
+    /** 日志与异常信息中记录的响应体最大长度：WAF 拦截页等大 HTML 全量打印会刷爆日志 */
+    private static final int ERROR_BODY_EXCERPT_LENGTH = 300;
+
+    /**
+     * 响应体摘要：压成单行并截断到固定长度，避免 WAF 拦截页/大 HTML 刷爆日志
+     */
+    private String excerpt(String body) {
+        if (body == null || body.isBlank()) {
+            return "";
+        }
+        String oneLine = body.replaceAll("\\s+", " ").trim();
+        return oneLine.length() <= ERROR_BODY_EXCERPT_LENGTH
+                ? oneLine : oneLine.substring(0, ERROR_BODY_EXCERPT_LENGTH) + "...(已截断)";
+    }
+
     /**
      * 流式调用 GLM Chat Completions API（SSE）
      */
@@ -65,8 +80,8 @@ public class GlmClient {
 
             if (response.statusCode() != 200) {
                 String errorBody = new String(response.body().readAllBytes(), StandardCharsets.UTF_8);
-                log.error("[GLM API] 流式调用失败, statusCode={}, error={}", response.statusCode(), errorBody);
-                throw new RuntimeException("GLM API error " + response.statusCode() + ": " + errorBody);
+                log.error("[GLM API] 流式调用失败, statusCode={}, 响应摘要={}", response.statusCode(), excerpt(errorBody));
+                throw new RuntimeException("GLM API error " + response.statusCode() + ": " + excerpt(errorBody));
             }
 
             try (BufferedReader reader = new BufferedReader(
@@ -118,9 +133,10 @@ public class GlmClient {
                     response.statusCode(), System.currentTimeMillis() - startTime);
 
             if (response.statusCode() != 200) {
-                log.error("[GLM API] embeddings 调用失败, statusCode={}, error={}",
-                        response.statusCode(), response.body());
-                throw new RuntimeException("Embedding API error: " + response.body());
+                log.error("[GLM API] embeddings 调用失败, statusCode={}, 响应摘要={}",
+                        response.statusCode(), excerpt(response.body()));
+                throw new RuntimeException("Embedding API error: HTTP " + response.statusCode()
+                        + ", body: " + excerpt(response.body()));
             }
 
             JsonNode root = objectMapper.readTree(response.body());
@@ -130,8 +146,9 @@ public class GlmClient {
             log.info("[GLM API] embeddings 成功, 向量维度={}", result.size());
             return result;
         } catch (Exception e) {
-            log.warn("[GLM API] embeddings 调用失败, 将降级为关键词搜索, 耗时={}ms, error={}",
-                    System.currentTimeMillis() - startTime, e.getMessage());
+            // 是否降级为关键词搜索由调用方决策，不属于 GLM 客户端的日志语义
+            log.error("[GLM API] embeddings 调用失败, 耗时={}ms",
+                    System.currentTimeMillis() - startTime, e);
             return null;
         }
     }
