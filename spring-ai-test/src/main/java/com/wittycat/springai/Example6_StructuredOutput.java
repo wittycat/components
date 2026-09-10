@@ -25,8 +25,20 @@ import java.util.List;
  */
 public class Example6_StructuredOutput {
 
-    /** 情感倾向:enum 限定取值,模型只能三选一 */
-    enum Sentiment { POSITIVE, NEUTRAL, NEGATIVE }
+    /**
+     * 情感倾向:enum 限定取值,模型只能三选一。
+     * 【原理】BeanOutputConverter 生成 JSON Schema 时,会把枚举常量名列为该字段的可选值,
+     * 模型按常量名输出(POSITIVE / NEUTRAL / NEGATIVE),Jackson 再按名字反序列化成枚举;
+     * 模型一旦输出了枚举之外的内容,解析就会失败——这正是"类型即约束"的含义。
+     */
+    enum Sentiment {
+        /** 好评 */
+        POSITIVE,
+        /** 中评 */
+        NEUTRAL,
+        /** 差评 */
+        NEGATIVE
+    }
 
     /** 评价分析结果:record 字段即 JSON 字段,嵌套类型自动推导 */
     record ReviewAnalysis(Sentiment sentiment, List<String> pros, List<String> cons, String summary) {
