@@ -18,9 +18,15 @@ import org.springframework.ai.chat.model.ChatResponse;
  *    把"固定话术"和"动态内容"分离,是工程化组装提示词的标准做法。
  * 4. token 用量:call().chatResponse() 拿到完整 ChatResponse,元数据里的 Usage
  *    记录本次请求/回复的 token 消耗——计费和上下文长度控制都看它。
+ *
+ * @author  javachenxun
+ * @date 2026/09/08
  */
 public class Example2_MessagesAndPrompt {
 
+    /**
+     * 程序入口,运行方式见类注释。
+     */
     public static void main(String[] args) {
         ChatClient chatClient = ChatClient.create(GlmModels.createChatModel());
 

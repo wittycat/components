@@ -16,9 +16,15 @@ import reactor.core.publisher.Flux;
  *    (见示例 9 的 SSE 接口,对比 langchain4j-test 手动回调 + SseEmitter 的写法)。
  * 3. .stream().content() 只取文本片段;.stream().chatResponse() 拿完整 ChatResponse 流,
  *    最后一个分片带 token 用量等元数据(需要统计时用它)。
+ *
+ * @author  javachenxun
+ * @date 2026/09/08
  */
 public class Example3_Streaming {
 
+    /**
+     * 程序入口,运行方式见类注释。
+     */
     public static void main(String[] args) {
         ChatClient chatClient = ChatClient.create(GlmModels.createChatModel());
 

@@ -23,6 +23,9 @@ import org.springframework.ai.openai.api.OpenAiApi;
  *    所以"一套客户端代码,全厂商通用"。
  * 3. temperature 越低回答越确定(0 近似复述),越高越发散;maxTokens 限制回复长度,
  *    防止失控输出——这两个是最常用的采样参数,通过 OpenAiChatOptions 传入。
+ *
+ * @author  javachenxun
+ * @date 2026/09/08
  */
 public final class GlmModels {
 

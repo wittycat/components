@@ -19,9 +19,15 @@ import org.springframework.ai.chat.client.ChatClient;
  * 3. ChatClient.create(model) 是便捷工厂;要预设系统提示词、Advisor 时改用
  *    ChatClient.builder(model)....build()(示例 5/8 会用到)。
  * 4. api-key 没配置时,GlmConfig 会抛出带操作指引的异常,照着提示配 application-local.yml 即可。
+ *
+ * @author  javachenxun
+ * @date 2026/09/08
  */
 public class Example1_QuickStart {
 
+    /**
+     * 程序入口,运行方式见类注释。
+     */
     public static void main(String[] args) {
         // 1. 创建模型:OpenAI 协议 + GLM 端点(配置读取见 GlmConfig / GlmModels)
         ChatClient chatClient = ChatClient.create(GlmModels.createChatModel());

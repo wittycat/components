@@ -17,6 +17,9 @@ import java.nio.charset.StandardCharsets;
  *    会自动填 metadata(见 Example7 的做法)。
  * 2. 学习示例用 classpath 上的 txt;真实项目换成 PDF/HTML 解析器或文件系统读取即可,
  *    后面的切分、向量化、检索代码完全不变——这就是 ETL 管线抽象的价值。
+ *
+ * @author  javachenxun
+ * @date 2026/09/08
  */
 public final class RagDocs {
 

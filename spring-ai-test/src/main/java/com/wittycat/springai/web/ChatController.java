@@ -26,6 +26,9 @@ import reactor.core.publisher.Flux;
  * 4. SSE 天然单向(服务器 → 客户端),聊天回复正是这个方向;上传文件等复杂交互再考虑 WebSocket。
  * 5. 生产化提示:超时与取消(Spring MVC 会在客户端断开时取消 Flux)、
  *    记忆持久化(MessageWindowChatMemory 换 Redis 实现)、敏感词/审计 Advisor 都是上线前要补的作业。
+ *
+ * @author  javachenxun
+ * @date 2026/09/08
  */
 @RestController
 @RequestMapping("/chat")

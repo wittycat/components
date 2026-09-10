@@ -22,6 +22,9 @@ import java.util.List;
  *    这是 Java 类型擦除下的标准做法(Spring 的 RestTemplate / WebClient 同款)。
  * 4. 对照 langchain4j-test 示例 6:那边把返回类型直接声明在 AiServices 接口方法上,
  *    这边在调用链末尾 .entity(...) 显式声明——同样的"类型驱动",挂载点不同。
+ *
+ * @author  javachenxun
+ * @date 2026/09/08
  */
 public class Example6_StructuredOutput {
 
@@ -44,6 +47,9 @@ public class Example6_StructuredOutput {
     record ReviewAnalysis(Sentiment sentiment, List<String> pros, List<String> cons, String summary) {
     }
 
+    /**
+     * 程序入口,运行方式见类注释。
+     */
     public static void main(String[] args) {
         ChatClient chatClient = ChatClient.create(GlmModels.createChatModel());
 

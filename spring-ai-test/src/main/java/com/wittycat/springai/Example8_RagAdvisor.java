@@ -29,9 +29,15 @@ import java.util.List;
  *    但注意检索用的是当前问题,多轮追问复杂时需要查询改写(见 langchain4j-test 示例 10 的思路)。
  * 4. 知识库外的问题:system 提示词约束"没有就说没有",配合 similarityThreshold 过滤,
  *    让模型老实回答"不知道"而不是编造。
+ *
+ * @author  javachenxun
+ * @date 2026/09/08
  */
 public class Example8_RagAdvisor {
 
+    /**
+     * 程序入口,运行方式见类注释。
+     */
     public static void main(String[] args) {
         // 1. 建库入库(和示例 7 相同)
         VectorStore vectorStore = SimpleVectorStore.builder(GlmModels.createEmbeddingModel()).build();

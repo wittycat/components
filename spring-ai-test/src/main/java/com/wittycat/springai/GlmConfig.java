@@ -21,6 +21,9 @@ import java.util.Map;
  *    spring.ai.openai.*,两种用法共享同一份配置。
  * 3. 同一个配置项的读取优先级(本类为纯 main() 示例手动实现,Web 示例由 Spring 完成同样的事):
  *      -D 系统属性 > 环境变量 > application-local.yml > application.yml
+ *
+ * @author  javachenxun
+ * @date 2026/09/08
  */
 public final class GlmConfig {
 

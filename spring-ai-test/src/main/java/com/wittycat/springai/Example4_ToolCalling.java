@@ -20,9 +20,15 @@ import java.util.Map;
  *    这整个循环由框架自动完成,业务代码只有 .tools(new XxxTools()) 一行。
  * 3. @ToolParam 给参数补充描述,帮助模型更准确地填参;参数支持 String/数字/boolean 等基础类型。
  * 4. 概念与 langchain4j-test 示例 4 完全互通(那边也是 @Tool,包名不同),对照着看更快。
+ *
+ * @author  javachenxun
+ * @date 2026/09/08
  */
 public class Example4_ToolCalling {
 
+    /**
+     * 程序入口,运行方式见类注释。
+     */
     public static void main(String[] args) {
         ChatClient chatClient = ChatClient.create(GlmModels.createChatModel());
 

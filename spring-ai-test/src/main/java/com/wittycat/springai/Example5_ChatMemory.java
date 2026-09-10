@@ -21,9 +21,15 @@ import org.springframework.ai.chat.memory.MessageWindowChatMemory;
  * 4. 对照 langchain4j-test 示例 5:那边用 @MemoryId 注解声明在接口参数上,
  *    这边用 CONVERSATION_ID 参数传递,思路一致,写法不同。
  * 5. 内存实现重启即失;生产环境给 ChatMemory 换持久化存储(如 Redis)即可,接口不变。
+ *
+ * @author  javachenxun
+ * @date 2026/09/08
  */
 public class Example5_ChatMemory {
 
+    /**
+     * 程序入口,运行方式见类注释。
+     */
     public static void main(String[] args) {
         // 1. 记忆存储 + 记忆 Advisor:窗口 20 条,挂到 ChatClient 上全局生效
         ChatMemory chatMemory = MessageWindowChatMemory.builder()

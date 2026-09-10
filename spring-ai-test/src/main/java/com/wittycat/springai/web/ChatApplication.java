@@ -21,10 +21,16 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * 3. 接口实现在同包 ChatController:ChatClient.stream() 的 Flux 直接作为返回值,
  *    Spring MVC 借 Reactor 桥接自动推 SSE(agentscope-test 同款风格;
  *    langchain4j-test 是 TokenStream 回调 + SseEmitter,两条路线可对照)。
+ *
+ * @author  javachenxun
+ * @date 2026/09/08
  */
 @SpringBootApplication
 public class ChatApplication {
 
+    /**
+     * 程序入口,运行方式见类注释。
+     */
     public static void main(String[] args) {
         SpringApplication.run(ChatApplication.class, args);
     }

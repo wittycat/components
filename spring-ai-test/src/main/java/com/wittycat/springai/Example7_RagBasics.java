@@ -29,9 +29,15 @@ import java.util.stream.Collectors;
  *    只是换一个 VectorStore Bean,检索代码一行不改。
  * 5. 本例最后一步手动拼提示词,把"资料 + 问题"一起发出去;示例 8 会把这个动作
  *    交给 QuestionAnswerAdvisor 自动完成。
+ *
+ * @author  javachenxun
+ * @date 2026/09/08
  */
 public class Example7_RagBasics {
 
+    /**
+     * 程序入口,运行方式见类注释。
+     */
     public static void main(String[] args) {
         EmbeddingModel embeddingModel = GlmModels.createEmbeddingModel();
 
