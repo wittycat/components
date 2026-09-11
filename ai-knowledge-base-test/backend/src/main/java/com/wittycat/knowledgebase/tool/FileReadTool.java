@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +57,7 @@ public class FileReadTool implements AgentTool {
     }
 
     private Path resolveSafePath(String relativePath) {
-        Path workspace = Paths.get(agentConfig.getWorkspaceDir()).toAbsolutePath().normalize();
+        Path workspace = agentConfig.resolveWorkspace();
         Path resolved = workspace.resolve(relativePath).normalize();
         if (!resolved.startsWith(workspace)) {
             throw new SecurityException("不允许访问工作目录外的文件");

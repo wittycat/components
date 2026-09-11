@@ -119,36 +119,9 @@ ChatClient(门面,链式 API)
 | 向量库 | `EmbeddingStore`(InMemory) | `VectorStore`(Simple) |
 | Spring 集成 | 手动 new,框架无关 | starter 自动配置,长在 Spring 里 |
 
-## 目录结构
-
-```
-spring-ai-test/
-├── pom.xml                            # spring-ai-bom 1.1.8 + starter-model-openai + spring-boot-starter-web
-├── README.md
-└── src/main/
-    ├── resources/
-    │   ├── application.yml            # 默认配置(glm.* + spring.ai.openai.* 占位符映射)
-    │   ├── application-local.yml      # 本地私密配置(gitignore,放真实 api-key)
-    │   └── rag/
-    │       └── knowledge-springai.txt # 知识库:Spring AI 框架知识(示例 7/8)
-    └── java/com/wittycat/springai/
-        ├── GlmConfig.java             # glm.* 配置加载(与 agentscope-test 同一约定)
-        ├── GlmModels.java             # 模型工厂:手动构建 ChatModel/EmbeddingModel
-        ├── RagDocs.java               # classpath 文档加载
-        ├── Example1_QuickStart.java   # ①最小对话
-        ├── Example2_MessagesAndPrompt.java  # ②系统提示词/模板/用量
-        ├── Example3_Streaming.java    # ③流式输出
-        ├── Example4_ToolCalling.java  # ④工具调用
-        ├── Example5_ChatMemory.java   # ⑤会话记忆
-        ├── Example6_StructuredOutput.java   # ⑥结构化输出
-        ├── Example7_RagBasics.java    # ⑦RAG 三环节手动版
-        ├── Example8_RagAdvisor.java   # ⑧RAG 接入 Advisor + 记忆组合
-        └── web/
-            ├── ChatApplication.java   # ⑨Spring Boot 启动类(端口 8084)
-            └── ChatController.java    #   SSE 流式聊天接口(Flux ↔ ServerSentEvent)
-```
-
 ## 常见问题
+
+### 运行排错
 
 - **报"未找到智谱 API Key"**:`application-local.yml` 里没填有效 key(还是占位 `demo`),见"环境准备"。
 - **CLI 示例为什么不启动 Spring**:聚焦 API 本身,启动快、干扰少;自动配置的魅力在示例 9 里看——注入 `ChatClient.Builder` 一行装配代码都没有。
@@ -156,3 +129,65 @@ spring-ai-test/
 - **端口冲突**:Web 示例占 8084,和仓库其他模块错开;要改就动 application.yml 的 `server.port`。
 - **embedding 报错**:向量模型走同一个端点,若换的厂商不提供 embedding 接口,给向量模型单独配 `base-url`。
 - **想升级 2.x**:Spring AI 2.0.x 面向 Spring Boot 4,需把父工程 `spring-boot-starter-parent` 和本模块 `spring-ai.version` 一起升级。
+
+### 概念问答(学习过程的提问整理)
+
+**切分与向量化**
+
+**Q1:这套切分参数最大适合多大文本?(`TokenTextSplitter(150, 40, 5, 10000, true, List.of('\n'))`)**
+
+答:理论上限由 maxNumChunks 决定:150 token/块 × 10000 块 ≈ 150 万 token(数百万字)。但真正瓶颈不在切分,而在入库成本(每块一次 embedding HTTP 调用)和检索方式(SimpleVectorStore 是全库余弦)。学习/演示几千字最舒服;生产上到几十万字就该换 PGVector/Milvus。
+
+**Q2:embedding-3 有维度选项吗?**
+
+答:默认 2048 维,基于 Matryoshka 技术支持 256/512/1024/2048 四档,降维可换检索速度、损一点精度。关键坑:换维度必须全库重新 embedding,不同维度的向量之间不能比较。
+
+**Q3:一段文字向量化之后是什么?**
+
+答:一个浮点数组(embedding-3 是 2048 个 float),本质是"语义坐标"——意思相近的文本,向量夹角小。不可逆:从向量还原不出原文,所以向量库通常把原文和向量存在一起,检索时按 id 取回原文。
+
+**向量库选型与存储**
+
+**Q4:生产常用哪个向量库?**
+
+答:Java/Spring 生态首选 PGVector(团队已有 PostgreSQL 时零新增组件);中大规模、亿级向量用 Milvus;已有 ES 团队可用 ES 8+ 的 kNN。Spring AI 的 `VectorStore` 接口屏蔽差异,从 Simple 换成 PGVector/Milvus,业务代码不动。
+
+**Q5:向量数据库的存储结构是怎样的?**
+
+答:分三层:①向量数据区,每条记录 = id + 浮点数组 + 元数据;②ANN 索引(HNSW/IVF-PQ 等),近似最近邻检索,牺牲少量召回换数量级加速;③标量索引,支持按元数据过滤(如"只在某年份的文档里搜")。`SimpleVectorStore` 没有索引层,检索就是内存全量余弦(FLAT 模式),数据一大就慢。
+
+**Q6:ANN 索引是向量数据库专有的吗?**
+
+答:ANN(近似最近邻)是一类算法的统称,HNSW、IVF、DiskANN 都是具体实现,解决"高维空间找最近邻"问题——传统 B+ 树按值排序组织,做不了语义距离检索。向量数据库的核心价值就是把 ANN 索引产品化(分布式、增量更新、标量过滤)。
+
+**Q7:MySQL 支持向量检索吗?**
+
+答:社区版基本不支持:MySQL 9 有了 VECTOR 列类型,但没有距离函数和 ANN 索引(那是 HeatWave 商业云服务的能力),只能全表扫描后自己算余弦;MariaDB 11.8 社区版倒是完整支持。仓库里 ai-knowledge-base-test 就是"MySQL 存向量 + Java 算余弦"的小数据量实现,几万条以内可用。
+
+**Q8:Milvus / PostgreSQL / MySQL 装完各占多少内存?**
+
+答:Milvus Standalone 空载约 1~2GB(官方建议 8GB 内存起步);PostgreSQL 空载约 100MB;MySQL 约 400MB。学习机不想扛 Milvus 的话,PGVector 是性价比最高的选择。
+
+**Embedding 与调用成本**
+
+**Q9:文字转向量需要调用 LLM 吗?**
+
+答:不需要。走独立的 Embedding 模型(embedding-3),和对话模型是两种模型:输入一段文本、输出浮点数组,没有生成过程,价格便宜 1~2 个数量级。RAG 全链路的 embedding 调用 = 入库时 N 次(每块一次)+ 每次提问 1 次(问题转向量);贵的 chat 调用只有最后生成回答那 1 次。
+
+**Q10:`vectorStore.add(chunks)` 内部调 Embedding 模型了吗?调了几次?**
+
+答:调了。`SimpleVectorStore.doAdd()` 对每个 chunk 逐条 `embeddingModel.embed()`,N 个块就是 N 次 HTTP 调用——这也是示例 7 入库阶段慢的原因。
+
+**Q11:`similaritySearch` 里问题也被转向量了吗?**
+
+答:是。流程 = 先把 query embed 成向量 → 与库内所有向量算余弦 → 低于 similarityThreshold 的丢弃 → 按分数降序取 topK。所以每次检索固定多一次 embedding 调用。
+
+**检索原理与调用协议**
+
+**Q12:ES 查询和向量检索,原理有什么区别?**
+
+答:ES 的 BM25 走倒排索引("词 → 文档列表"),靠词频、IDF、长度归一化打分,是字面统计匹配;向量检索把文本映射成语义坐标,靠向量距离找"意思最近"的。失效场景互补:搜"电脑死机"找不到"计算机卡住"(字面不同、语义近,向量赢);搜"ERROR-1042"这种精确错误码,BM25 反而更准。生产常用混合检索:两路各召回一批,RRF 融合排序。
+
+**Q13:调用 LLM 目前有几种协议?怎么区分?**
+
+答:厂商原生主流 3 种:**OpenAI Chat Completions**(事实标准,GLM/DeepSeek/Qwen/Kimi/vLLM/Ollama 都提供兼容端点)、**Anthropic Messages**(Claude;2025 年起国产厂商为接 Claude Code 纷纷加兼容端点)、**Gemini generateContent**。30 秒区分法:看路径(`/chat/completions` vs `/messages` vs `:generateContent`)、看 system 位置(在 messages 数组里 vs 请求体顶层)、看流式收尾(`data:[DONE]` vs `event:message_stop`)。MCP/A2A 不在这一层——分别管"Agent 接工具"和"Agent 间协作",底层照样落到模型调用协议。本模块就是"OpenAI 协议接 GLM":`spring-ai-starter-model-openai` + 改 base-url,换厂商零代码改动;仓库里 spring-ai-alibaba-test 是另一种接法(DashScope 原生协议 + 专属 starter)。

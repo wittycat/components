@@ -43,7 +43,8 @@ agent:
   # 工具调用最大循环次数（防止无限循环）
   max-tool-iterations: 5
   # 工具执行的工作目录（Shell/文件操作限制在此目录内）
-  workspace-dir: ${user.home}/ai-knowledge-base-test-workspace
+  # 相对路径按项目根（ai-knowledge-base-test/）解析，与启动目录无关；workspace 即 <项目根>/workspace
+  workspace-dir: workspace
   # 知识库上传限制（KB；0 = 不限制上传大小）
   max-upload-size-kb: 0
   max-chunks-per-document: 100000

@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -100,7 +99,7 @@ public class ShellTool implements AgentTool {
             return "错误：" + error;
         }
 
-        Path workspace = Paths.get(agentConfig.getWorkspaceDir()).toAbsolutePath().normalize();
+        Path workspace = agentConfig.resolveWorkspace();
         java.nio.file.Files.createDirectories(workspace);
 
         ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", command);

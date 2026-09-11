@@ -142,7 +142,7 @@ npm run dev
 
 ## 安全说明
 
-- Shell 命令和文件操作限制在 `~/ai-knowledge-base-test-workspace` 目录
+- Shell 命令和文件操作限制在项目根下的 `workspace/` 目录（`agent.workspace-dir`，相对路径按项目根解析，不受启动目录影响）
 - 危险命令（rm -rf /、shutdown 等）被黑名单拦截
 - 命令执行超时 30 秒
 

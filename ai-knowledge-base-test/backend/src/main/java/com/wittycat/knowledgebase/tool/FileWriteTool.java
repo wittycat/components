@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +43,7 @@ public class FileWriteTool implements AgentTool {
         String relativePath = (String) arguments.get("path");
         String content = (String) arguments.get("content");
 
-        Path workspace = Paths.get(agentConfig.getWorkspaceDir()).toAbsolutePath().normalize();
+        Path workspace = agentConfig.resolveWorkspace();
         Files.createDirectories(workspace);
 
         Path filePath = workspace.resolve(relativePath).normalize();
