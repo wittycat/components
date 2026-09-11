@@ -15,6 +15,7 @@ react-nodejs-test/server/node_modules
 /ai-knowledge-base-test/frontend/node_modules/
 /ai-knowledge-base-test/backend/maven-settings.xml
 /ai-knowledge-base-test/workspace/
+/sca2025-test/nacos-cache/
 
 # 各模块的本地私密配置(Spring Boot 约定命名;不带路径分隔符 = 匹配任意层级)
 application-local.yml

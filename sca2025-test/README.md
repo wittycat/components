@@ -44,6 +44,8 @@ sca2025-test/
 | Sentinel 控制台 | localhost:8858 | 查看服务/网关流控规则与监控 |
 | Zipkin | localhost:9411 | 链路追踪 UI |
 
+> Nacos 客户端本地缓存（服务发现 `naming/` + 配置快照 `config/`）通过 `JM.SNAPSHOT.PATH` 收敛到了工程根的 `nacos-cache/`（见 `NacosClientCache.init()`），不再写 `~/nacos`；该目录是临时缓存，可随时删除。
+
 Nacos 上需创建的配置：
 
 - `provider-service.yaml`、`consumer-service.yaml`（DEFAULT_GROUP）：各服务的扩展配置，含演示用的 `demo.config.message`、`address.name`；
