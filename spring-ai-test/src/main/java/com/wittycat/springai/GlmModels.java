@@ -37,7 +37,15 @@ public final class GlmModels {
         return createChatModel(0.7, 2048);
     }
 
-    /** 聊天模型,可调采样参数 */
+    /**
+     * 聊天模型,可调采样参数。
+     *
+     * @param temperature 控制生成文本的随机性 (通常范围 0.0 - 1.0)。
+     *                    值越低输出越确定、可重复（0.0 近似复述）；值越高输出越发散、富于创意。
+     *                    建议：0.0-0.3 用于精确/复述场景；0.4-0.8 适合常规生成；>0.8 用于高度创意生成场景。
+     * @param maxTokens   限制模型回复的最大标记数（tokens），用于控制回复长度并防止过长或超额计费。
+     *                    注意：token 与字符数不同，具体长度依赖 tokenizer；常见示例值为 256、512、2048。
+     */
     public static ChatModel createChatModel(double temperature, int maxTokens) {
         return OpenAiChatModel.builder()
                 .openAiApi(createApi())
