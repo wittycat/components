@@ -14,8 +14,9 @@ import com.alibaba.cloud.ai.graph.StateGraph;
  * 【知识点】
  * 1. "LLM 节点"没有任何魔法:就是在 NodeAction 里调 ChatClient,把结果写回状态。
  *    LLM 负责判断/生成,图负责调度 —— 两者正交组合。
- * 2. 意图分类用 .entity(枚举.class) 结构化输出(spring-ai-test 示例 6 学过的能力,原样搬过来):
- *    模型只会返回 TECH/BILLING/OTHER 之一,拿它驱动条件边,天然不会写出非法路由。
+ * 2. 意图分类用 .entity() 结构化输出(spring-ai-test 示例 6 学过的能力):
+ *    注意枚举不能裸用 .entity(枚举.class),要用 record 包一层(见 SupportRoutingGraph.Classification),
+ *    否则模型可能回 {"BILLING"} 这类畸形 JSON 导致反序列化失败(qwen-plus 实测踩过)。
  * 3. 这种"先理解、再分流、各分支专职处理"的多步工作流,用 ChatClient + Advisor 很别扭
  *    (Advisor 是请求管线上的拦截器,表达不了"分支");用 Graph 声明出来则一目了然。
  *    这就是 Spring AI(管单次调用)与 Spring AI Alibaba Graph(管流程编排)的分工。

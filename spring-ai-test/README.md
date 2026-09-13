@@ -166,7 +166,15 @@ ChatClient(门面,链式 API)
 
 **Q8:Milvus / PostgreSQL / MySQL 装完各占多少内存?**
 
-答:Milvus Standalone 空载约 1~2GB(官方建议 8GB 内存起步);PostgreSQL 空载约 100MB;MySQL 约 400MB。学习机不想扛 Milvus 的话,PGVector 是性价比最高的选择。
+答:
+
+| 数据库 | 空载内存 | 备注 |
+|---|---|---|
+| Milvus Standalone | 约 1~2GB | 官方建议 8GB 内存起步 |
+| PostgreSQL | 约 100MB | 加 PGVector 扩展也不重 |
+| MySQL | 约 400MB | 社区版无向量检索能力,见 Q7 |
+
+学习机不想扛 Milvus 的话,PGVector 是性价比最高的选择。
 
 **Embedding 与调用成本**
 
@@ -186,8 +194,69 @@ ChatClient(门面,链式 API)
 
 **Q12:ES 查询和向量检索,原理有什么区别?**
 
-答:ES 的 BM25 走倒排索引("词 → 文档列表"),靠词频、IDF、长度归一化打分,是字面统计匹配;向量检索把文本映射成语义坐标,靠向量距离找"意思最近"的。失效场景互补:搜"电脑死机"找不到"计算机卡住"(字面不同、语义近,向量赢);搜"ERROR-1042"这种精确错误码,BM25 反而更准。生产常用混合检索:两路各召回一批,RRF 融合排序。
+答:
+
+| | ES(BM25) | 向量检索 |
+|---|---|---|
+| 索引 | 倒排索引("词 → 文档列表") | ANN 索引(HNSW/IVF 等) |
+| 匹配方式 | 字面统计:词频、IDF、长度归一化打分 | 语义坐标距离(余弦夹角) |
+| 搜"电脑死机"能命中"计算机卡住"吗 | 不能,字面不同 | 能,语义相近 |
+| 搜"ERROR-1042"精确错误码 | 更准 | 向量反而可能失手 |
+
+两边的失效场景正好互补,生产常用混合检索:两路各召回一批,RRF 融合排序。
 
 **Q13:调用 LLM 目前有几种协议?怎么区分?**
 
-答:厂商原生主流 3 种:**OpenAI Chat Completions**(事实标准,GLM/DeepSeek/Qwen/Kimi/vLLM/Ollama 都提供兼容端点)、**Anthropic Messages**(Claude;2025 年起国产厂商为接 Claude Code 纷纷加兼容端点)、**Gemini generateContent**。30 秒区分法:看路径(`/chat/completions` vs `/messages` vs `:generateContent`)、看 system 位置(在 messages 数组里 vs 请求体顶层)、看流式收尾(`data:[DONE]` vs `event:message_stop`)。MCP/A2A 不在这一层——分别管"Agent 接工具"和"Agent 间协作",底层照样落到模型调用协议。本模块就是"OpenAI 协议接 GLM":`spring-ai-starter-model-openai` + 改 base-url,换厂商零代码改动;仓库里 spring-ai-alibaba-test 是另一种接法(DashScope 原生协议 + 专属 starter)。
+答:厂商原生主流 3 种:
+
+| 协议 | 请求路径 | system 位置 | 流式收尾 | 谁在用 |
+|---|---|---|---|---|
+| OpenAI Chat Completions | `/chat/completions` | messages 数组里 | `data:[DONE]` | OpenAI 本家 + GLM/DeepSeek/Qwen/Kimi/vLLM/Ollama(**事实标准**) |
+| Anthropic Messages | `/messages` | 请求体顶层 | `event:message_stop` | Claude;2025 年起国产厂商为接 Claude Code 纷纷加兼容端点 |
+| Gemini generateContent | `:generateContent` | systemInstruction 字段 | data 流(`?alt=sse`) | Gemini 官方 |
+
+拿到端点 30 秒区分法:看路径 → 看 system 位置 → 看流式收尾。MCP/A2A 不在这一层——分别管"Agent 接工具"和"Agent 间协作",底层照样落到模型调用协议。本模块就是"OpenAI 协议接 GLM":`spring-ai-starter-model-openai` + 改 base-url,换厂商零代码改动;仓库里 spring-ai-alibaba-test 是另一种接法(DashScope 原生协议 + 专属 starter)。
+
+**消息、Advisor 与构件**
+
+**Q14:MessageType 的 USER / ASSISTANT / SYSTEM / TOOL 是什么?**
+
+答:消息角色枚举,标注"这条消息是谁说的",枚举值的小写字符串就是 OpenAI 协议报文 `messages[].role` 的字面值。
+
+| 角色 | 谁在说 | 典型内容 | 在本模块里 |
+|---|---|---|---|
+| SYSTEM | 开发者 | 人设、规则、约束,优先级最高 | `.defaultSystem()` 设的系统提示词 |
+| USER | 用户 | 提问 | 每次 `.user(...)` |
+| ASSISTANT | 模型 | 模型以前说过的回答 | 记忆重发的历史、SSE 流式吐出的 token |
+| TOOL | 你的 Java 代码 | 工具执行的**结果** | 示例 4 工具循环里框架自动喂回,不用手写 |
+
+易混点:模型的"工具调用请求"不是 TOOL 消息,而是带 `tool_calls` 的 ASSISTANT 消息(content 为空);TOOL 消息必须带 `tool_call_id` 回指响应哪次调用。
+
+**Q15:Advisor 有哪些常用成品?**
+
+答:常用 6 个:
+
+| 类 | 作用 | 备注 |
+|---|---|---|
+| `MessageChatMemoryAdvisor` | 会话记忆 | 示例 5 在用;窗口大小 + CONVERSATION_ID |
+| `QuestionAnswerAdvisor` | RAG:检索 + 拼上下文 | 示例 8 在用;topK/相似度阈值 |
+| `RetrievalAugmentationAdvisor` | 生产级 RAG 管线 | 查询改写/多路扩展/空结果兜底;**需手动加 `spring-ai-rag` 依赖** |
+| `VectorStoreChatMemoryAdvisor` | 记忆存进向量库 | 长会话按语义捞历史 |
+| `SimpleLoggerAdvisor` | 打印每轮请求/响应 | 调试神器,加一行就能看到完整报文 |
+| `SafeGuardAdvisor` | 敏感词拦截 | 命中直接返回固定话术,不调模型 |
+
+`ToolCallAdvisor`、`ChatModelCallAdvisor`/`ChatModelStreamAdvisor` 等是框架内部用的,别手动挂。自定义:实现 `BaseAdvisor` 的 `before()`/`after()` 两个方法(环绕通知,同步/流式一套代码通吃),审计、限流、脱敏都该写成 Advisor 而不是包一层 Service。组合时注意顺序语义:要让记忆存到用户原始问题,别让 RAG 注入后的长文本污染会话历史(见示例 8 注释第 2 条)。
+
+**Q16:spring-ai-vector-store 和 spring-ai-advisors-vector-store 什么区别?**
+
+答:上下两层,单向依赖(后者的 pom 明确依赖前者):
+
+| | spring-ai-vector-store | spring-ai-advisors-vector-store |
+|---|---|---|
+| 定位 | 向量库**抽象层** | 建在抽象之上的 **ChatClient Advisor** |
+| 类数量 | 91 个 | 3 个 |
+| 核心内容 | `VectorStore` 接口、`SimpleVectorStore`、`SearchRequest`、元数据过滤 | `QuestionAnswerAdvisor`、`VectorStoreChatMemoryAdvisor` |
+| 依赖 ChatClient | 否 | 是(经 spring-ai-client-chat) |
+| 谁在用 | 示例 7(建库/入库/检索) | 示例 8(RAG Advisor 化) |
+
+生产换 PGVector/Milvus 时加对应 starter 换掉 SimpleVectorStore,Advisor 层一行不动。当初 import `QuestionAnswerAdvisor` 编译报错,就是因为模型 starter 两个构件都不带,需在 pom 手动加。

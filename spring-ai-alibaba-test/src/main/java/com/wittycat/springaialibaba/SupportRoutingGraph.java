@@ -19,12 +19,22 @@ import java.util.Map;
  * 流程:START → classify(LLM 结构化输出意图) → 条件边分流 → tech/billing/other 应答节点 → END
  *
  * 设计要点(与示例 3 的差异):节点里调 ChatClient,这就是"LLM 节点"的全部秘密;
- * classify 用 .entity(Category.class) 让模型只能返回枚举值,条件边拿它路由,不会出现非法分支。
+ * classify 用 .entity(Classification.class) 让模型只能返回枚举值,条件边拿它路由,不会出现非法分支。
  */
 public final class SupportRoutingGraph {
 
     /** 意图枚举:LLM 结构化输出的目标类型,也是条件边的路由 key */
     public enum Category { TECH, BILLING, OTHER }
+
+    /**
+     * 枚举的结构化输出载体:必须用 record 包一层,不能直接 .entity(Category.class)。
+     * 裸枚举时 BeanOutputConverter 生成的 schema 只是"一个字符串枚举",但格式指令又说"输出 JSON",
+     * 模型(qwen-plus 实测)会折中回 {"BILLING"} 这种畸形结果,Jackson 以对象开头反序列化枚举直接失败。
+     * 包成 record 后 schema 变成 {"category":{"type":"string","enum":[...]}},模型输出
+     * {"category":"BILLING"},两边语义对齐,一次通过。
+     */
+    record Classification(Category category) {
+    }
 
     /** 状态 key:question 输入 / category 分类 / answer 应答 / steps 执行轨迹 */
     public static final String QUESTION = "question";
@@ -47,16 +57,23 @@ public final class SupportRoutingGraph {
 
         try {
             return new StateGraph("support-routing", keyStrategyFactory)
-                    // 意图分类节点:LLM 只回一个枚举词
+                    // 意图分类节点:LLM 只回一个枚举词(system 提示词不再说"只输出一个分类词",
+                    // 避免 .entity() 追加的"输出 JSON"格式指令和它打架,模型会回出畸形结果)。
+                    // 状态里存 category.name() 而不是枚举本身:SAA 会在最终状态里把枚举存成
+                    // [类型名, 枚举名] 的 List 形态,取回时 value(key) 拿到 List、value(key, Class)
+                    // 又还原不了,只有 String 是怎么存就怎么取的
                     .addNode("classify", AsyncNodeAction.node_async(state -> {
-                        Category category = chatClient.prompt()
+                        Classification classification = chatClient.prompt()
                                 .system("你是客服路由器。把用户问题分类为:TECH(技术故障/功能异常)、"
-                                        + "BILLING(计费/退款/账单)、OTHER(其他)。只输出一个分类词。")
+                                        + "BILLING(计费/退款/账单)、OTHER(其他)。")
                                 .user(state.value(QUESTION, ""))
                                 .call()
-                                .entity(Category.class);
+                                .entity(Classification.class);
+                        // 模型偶尔回 {} 时兜底为 OTHER,别让图在 Map.of 的 null 检查上炸掉
+                        Category category = classification.category() == null
+                                ? Category.OTHER : classification.category();
                         System.out.println(">> [classify 节点] 意图 = " + category);
-                        return Map.of(CATEGORY, category, STEPS, "classify:" + category);
+                        return Map.of(CATEGORY, category.name(), STEPS, "classify:" + category);
                     }))
                     // 三个专职应答节点:各自的系统提示词写死职责,这比一个大而全的提示词更可控
                     .addNode("tech_answer", AsyncNodeAction.node_async(state ->
@@ -66,9 +83,9 @@ public final class SupportRoutingGraph {
                     .addNode("other_answer", AsyncNodeAction.node_async(state ->
                             answerNode(chatClient, "友好的通用客服", "简洁回答,并说明可转人工。", state)))
                     .addEdge(StateGraph.START, "classify")
-                    // 条件边:分类结果是 TECH/BILLING/OTHER 分别进哪个节点
+                    // 条件边:分类结果是 TECH/BILLING/OTHER 分别进哪个节点(值是 name() 出来的 String)
                     .addConditionalEdges("classify",
-                            AsyncEdgeAction.edge_async(state -> state.value(CATEGORY, Category.OTHER).name()),
+                            AsyncEdgeAction.edge_async(state -> state.value(CATEGORY, Category.OTHER.name())),
                             Map.of(Category.TECH.name(), "tech_answer",
                                     Category.BILLING.name(), "billing_answer",
                                     Category.OTHER.name(), "other_answer"))
