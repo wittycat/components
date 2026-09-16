@@ -1,6 +1,6 @@
 # spring-ai-test —— Spring AI 学习示例
 
-[Spring AI](https://docs.spring.io/spring-ai/reference/) 是 Spring 官方的 AI 应用框架,本模块锁定 **1.1.8**(官方 BOM),配套父工程的 **Spring Boot 3.5.3**,要求 JDK 17+。包含 8 个**递进式** CLI 示例 + 1 个 **Spring Boot SSE 流式接口**,每个都是独立可运行的 main 类,注释里写清了每个知识点。
+[Spring AI](https://docs.spring.io/spring-ai/reference/) 是 Spring 官方的 AI 应用框架,本模块锁定 **1.1.8**(官方 BOM),配套父工程的 **Spring Boot 3.5.3**,要求 JDK 17+。包含 8 个**递进式** CLI 示例 + 1 个 **Spring Boot SSE 流式接口**,外加 PgVector 持久化篇(示例 10~12 + Web RAG 接口)和 MCP 服务篇(Apifox 可连),每个都是独立可运行的 main 类,注释里写清了每个知识点。
 
 > **版本说明**:Spring AI 2.0.x 已面向 Spring Boot 4 发布,但父工程锁定 Boot 3.5,所以本模块用 1.1.x 稳定线;想学 2.x 时把父工程 parent 和 pom 里的 `spring-ai.version` 一起升级,API 思路不变。
 >
@@ -9,7 +9,7 @@
 ## 环境准备(只做一次)
 
 1. **JDK 17+**、Maven 3.9+
-2. **配置智谱 API Key**(示例 1~9 都需要):编辑 `src/main/resources/application-local.yml`(该文件已被 `.gitignore` 排除,不会提交),填入你的 key:
+2. **配置智谱 API Key**(全部示例都需要):编辑 `src/main/resources/application-local.yml`(该文件已被 `.gitignore` 排除,不会提交),填入你的 key:
 
 ```yaml
 glm:
@@ -17,6 +17,13 @@ glm:
   base-url: https://open.bigmodel.cn/api/coding/paas/v4
   model: glm-5.3-flash
   embedding-model: embedding-3
+```
+
+3. **PostgreSQL(示例 10~12 和全部 Web 接口需要)**:安装并启动 Postgres.app(端口 5432),然后建库并启用向量扩展:
+
+```bash
+createdb rag_demo                                  # 没建过才需要
+psql -d rag_demo -c "CREATE EXTENSION IF NOT EXISTS vector;"
 ```
 
 模型走智谱的 OpenAI 兼容协议:Spring AI 侧只依赖 `spring-ai-starter-model-openai`,把 base-url 指向 GLM 端点即可;换 DeepSeek/Kimi/本地 vLLM 只是改 `base-url` 和 `model` 两个配置。
@@ -38,7 +45,7 @@ glm:
 | 6 | `Example6_StructuredOutput` | 结构化输出:entity() 直接拿 record/enum/List | 同上,换类名 |
 | 7 | `Example7_RagBasics` | RAG 基础:切分→向量化入库→手动检索→拼上下文 | 同上,换类名 |
 | 8 | `Example8_RagAdvisor` | RAG 接 Advisor:QuestionAnswerAdvisor + 记忆组合 | 同上,换类名 |
-| 9 | `web.ChatApplication` | Spring Boot + SSE 流式聊天接口(打字机) | `mvn -q spring-boot:run`(端口 8084) |
+| 9 | `SpringAiApplication` | Spring Boot 集成:全模块唯一启动类,SSE 流式聊天(打字机)+ RAG 三接口同应用暴露 | `mvn -q spring-boot:run`(端口 8084) |
 
 ### 示例 4 预期输出(重点看"谁在执行工具")
 
@@ -85,6 +92,59 @@ curl -N "localhost:8084/chat/stream?sessionId=s1&message=%E7%94%A8%E4%B8%80%E5%8
 
 每帧一个 `data:` 消息(一个 token),最后以 `data:[DONE]` 收尾;同一个 `sessionId` 连续请求,助手记得上文(原理同示例 5)。
 
+## PgVector 持久化篇(示例 10~12 + Web RAG)
+
+示例 7/8 的向量库是内存版(`SimpleVectorStore`,重启即失)。这一篇换成 PostgreSQL + pgvector 扩展,把向量真正落库——`VectorStore` 接口不变,只换 starter(`spring-ai-starter-vector-store-pgvector`)和配置,这就是"换向量库不改业务代码"的现场演示。前置条件见上文环境准备第 3 条。
+
+| # | 类 | 学什么 | 运行命令 |
+|---|---|---|---|
+| 10 | `pgvector.Example10_Embedding` | 裸 embedding + 手写余弦相似度:语义相关 0.87 vs 无关 0.32 | `mvn -q compile exec:java -Dexec.mainClass=com.wittycat.pgvector.Example10_Embedding` |
+| 11 | `pgvector.Example11_Ingest` | 切块灌库:写入 PG 的 `vector_store` 表 | 同上,换类名 |
+| 12 | `pgvector.Example12_Search` | HNSW 索引相似度检索(RAG 前半段) | 同上,换类名 |
+
+CLI 示例会以 web(NONE) 启动一个临时 Spring 上下文,复用 application.yml 的全部配置(数据源、embedding 维度、pgvector 建表)。
+
+### Web 版 RAG(和示例 9 同一个启动类)
+
+RAG 三接口和示例 9 的 SSE 挂在同一个 `SpringAiApplication` 上(启动类放在 `com.wittycat` 包根,默认组件扫描就覆盖 `springai/` 和 `pgvector/` 两个平级业务包),一条命令启动:
+
+```bash
+mvn -q spring-boot:run
+curl -X POST http://127.0.0.1:8084/rag/ingest     # 重新灌库,返回 {"chunks":4}
+curl "http://127.0.0.1:8084/rag/search?q=HNSW%20索引"   # 只检索,看分数
+curl "http://127.0.0.1:8084/rag/chat?q=切块太大或太小有什么问题"   # 完整 RAG
+```
+
+中文查询参数用 `curl -G --data-urlencode "q=中文问题"` 更省事。
+
+### 易踩的坑(细节见 application.yml 注释)
+
+- **维度不匹配**:GLM embedding-3 默认 2048 维,pgvector 的 HNSW 索引最多 2000 维,所以压到 1024(`spring.ai.openai.embedding.options.dimensions` 和 `spring.ai.vectorstore.pgvector.dimensions` 两处都要);改维度后先 `DROP TABLE vector_store` 再重灌,且不同维度的向量不能互相比较。
+- **embeddings 404**:chat 走 coding 专用端点,embedding 单独走通用端点 `https://open.bigmodel.cn/api/paas/v4`(见 application.yml 的 `embedding.base-url`)。
+- **连接失败**:启动类启动即连 PG,检查 Postgres.app 是否在运行(菜单栏大象图标)。若只想跑 SSE 不连库,可在启动类 `exclude` 掉 DataSource/PGVector 两项自动配置(条件装配,可精确关掉)。
+
+## MCP 服务篇(Apifox 可连)
+
+MCP(Model Context Protocol)是"AI 应用接外部工具"的开放协议,三个角色:**MCP Host**(装着 AI 的应用,如 Apifox/Claude/Cursor)→ **MCP Client**(Host 里的协议连接器)→ **MCP Server**(本应用)。本篇把模块挂成 MCP Server,工具写在 `mcp/McpTestTools`(普通方法 + `@Tool` 注解),由 `mcp/McpServerConfig` 的 `ToolCallbackProvider` 注册——和示例 4 是**同一个 `@Tool` 注解、两种出口**:喂给 ChatClient 是模型自用,注册进 MCP Server 是给外部 AI 应用跨进程调用。
+
+| 工具 | 参数 | 作用 |
+|---|---|---|
+| `echo` | `message` | 回显消息,最小连通性验证 |
+| `getCurrentTime` | `timezone`(可选,如 `Asia/Shanghai`/`UTC`) | 当前时间,默认系统时区 |
+| `add` | `a`、`b`(数值) | 两数相加 |
+| `ragSearch` | `query` | 在 pgvector 知识库里语义检索 top3(需 PG 已启动且已跑示例 11 灌库) |
+
+### Apifox 连接步骤(需 Apifox ≥ 2.8.3)
+
+1. 启动本模块:`mvn -q spring-boot:run`(和 SSE/RAG 同一个应用,8084);
+2. Apifox 里新建接口,**协议类型选 MCP**,服务端地址粘贴 `http://127.0.0.1:8084/mcp`(粘贴 URL 会自动识别为 Streamable HTTP);
+3. 点"连接"——成功后目录树列出 Tools(上表 4 个);
+4. 选中工具,表单(或 JSON 编辑器)填参数 → "运行",响应区可看结果;Messages 标签页/信封模式还能看到完整 JSON-RPC 报文,正好对着 MCP 协议学。
+
+> 为什么用 Streamable HTTP 而不是默认 SSE:Apifox 的 MCP 调试只支持 STDIO 和 Streamable HTTP 两种传输,所以 application.yml 里显式配了 `spring.ai.mcp.server.protocol: STREAMABLE`(端点默认 `/mcp`)。
+>
+> 安全提示:HTTP 传输默认**无鉴权**,任何能访问 8084 的客户端都能列出并调用全部工具——只在本机调试用,暴露到 localhost 之外前要自加安全边界(如 Spring Security)。
+
 ## 核心概念速查
 
 ```
@@ -103,7 +163,7 @@ ChatClient(门面,链式 API)
 - **Advisor 链**:Spring AI 最有辨识度的设计,思路同 Servlet Filter / AOP——请求依次穿过拦截器,每个拦截器可改写 Prompt(记忆注入历史、RAG 注入资料)或处理响应;日志、审计、敏感词过滤都该写成 Advisor。
 - **自动配置**:`spring-ai-starter-model-openai` 读了 `spring.ai.openai.*` 后,容器里自动有 `ChatModel`/`EmbeddingModel`/`ChatClient.Builder` 三个 Bean——这是它相对 LangChain4j"手动 new"的最大差异。
 - **记忆**:大模型无状态,"记得" = 框架把历史消息随每次请求重发;`MessageWindowChatMemory` 滑动窗口防爆内存,`CONVERSATION_ID` 隔离会话(内存实现重启即失,生产换持久化)。
-- **RAG**:入库 = `TokenTextSplitter` 切分 + `VectorStore.add()`;检索 = `similaritySearch` 按相似度取 Top-N(`similarityThreshold` 过滤无关内容治幻觉)。`SimpleVectorStore` 是内存实现,生产换 PGVector/Milvus,接口不变。
+- **RAG**:入库 = `TokenTextSplitter` 切分 + `VectorStore.add()`;检索 = `similaritySearch` 按相似度取 Top-N(`similarityThreshold` 过滤无关内容治幻觉)。`SimpleVectorStore` 是内存实现;示例 10~12 已演示换成 PGVector(只换 starter + 配置,接口不变),生产亦可换 Milvus。
 
 ## 和 langchain4j-test 对照着学(概念互通)
 
@@ -119,18 +179,7 @@ ChatClient(门面,链式 API)
 | 向量库 | `EmbeddingStore`(InMemory) | `VectorStore`(Simple) |
 | Spring 集成 | 手动 new,框架无关 | starter 自动配置,长在 Spring 里 |
 
-## 常见问题
-
-### 运行排错
-
-- **报"未找到智谱 API Key"**:`application-local.yml` 里没填有效 key(还是占位 `demo`),见"环境准备"。
-- **CLI 示例为什么不启动 Spring**:聚焦 API 本身,启动快、干扰少;自动配置的魅力在示例 9 里看——注入 `ChatClient.Builder` 一行装配代码都没有。
-- **curl 示例 9 返回 400**:中文参数必须 URL 编码(浏览器地址栏会自动做,curl 不会);或改用 `--data-urlencode` 的 `curl -G` 写法。
-- **端口冲突**:Web 示例占 8084,和仓库其他模块错开;要改就动 application.yml 的 `server.port`。
-- **embedding 报错**:向量模型走同一个端点,若换的厂商不提供 embedding 接口,给向量模型单独配 `base-url`。
-- **想升级 2.x**:Spring AI 2.0.x 面向 Spring Boot 4,需把父工程 `spring-boot-starter-parent` 和本模块 `spring-ai.version` 一起升级。
-
-### 概念问答(学习过程的提问整理)
+## 概念问答(学习过程的提问整理)
 
 **切分与向量化**
 
@@ -259,4 +308,4 @@ ChatClient(门面,链式 API)
 | 依赖 ChatClient | 否 | 是(经 spring-ai-client-chat) |
 | 谁在用 | 示例 7(建库/入库/检索) | 示例 8(RAG Advisor 化) |
 
-生产换 PGVector/Milvus 时加对应 starter 换掉 SimpleVectorStore,Advisor 层一行不动。当初 import `QuestionAnswerAdvisor` 编译报错,就是因为模型 starter 两个构件都不带,需在 pom 手动加。
+生产换向量库时加对应 starter 换掉 SimpleVectorStore,Advisor 层一行不动——示例 10~12 就是现场演示(本模块 pom 里的 `spring-ai-starter-vector-store-pgvector`)。当初 import `QuestionAnswerAdvisor` 编译报错,就是因为模型 starter 两个构件都不带,需在 pom 手动加。

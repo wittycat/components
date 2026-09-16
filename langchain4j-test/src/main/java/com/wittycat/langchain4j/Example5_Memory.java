@@ -20,6 +20,9 @@ import dev.langchain4j.service.UserMessage;
  * 4. 接口方法上加 @MemoryId 标记"这个参数是会话 ID",它不会发给模型,只用于选记忆。
  * 5. 记忆是存在内存里的(进程重启即失)。生产环境可用 langchain4j-community 提供的
  *    Redis/数据库等持久化 ChatMemoryStore,接口是现成的,换实现即可。
+ * 6. 挂了 SimpleLoggerChatModelListener(等价 Spring AI 的 SimpleLoggerAdvisor):它挂在模型上,
+ *    打印的是"记忆组装完成后"真正发给模型的消息列表——看第二轮 [s1] 的日志,历史消息都在里面,
+ *    正好印证第 1 条:所谓记忆,就是框架替你把历史拼进请求。
  */
 public class Example5_Memory {
 
@@ -31,7 +34,8 @@ public class Example5_Memory {
 
     public static void main(String[] args) {
         ChatAssistant assistant = AiServices.builder(ChatAssistant.class)
-                .chatModel(GlmModels.createChatModel())
+                // 挂上日志监听器:观察"记忆组装后"真正发给模型的完整消息列表
+                .chatModel(GlmModels.createChatModel(0.7, 2048, new SimpleLoggerChatModelListener()))
                 // 每个 sessionId 第一次出现时,创建一个独立的滑动窗口记忆
                 .chatMemoryProvider(memoryId -> MessageWindowChatMemory.builder()
                         .id(memoryId)

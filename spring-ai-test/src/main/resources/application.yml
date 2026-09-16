@@ -1,5 +1,6 @@
 server:
-  # ai-agent 8080、agentscope-test 8081、langgraph4j-test 预留 8082、langchain4j-test 8083,本模块的 Web SSE 示例用 8084
+  # ai-agent 8080、agentscope-test 8081、langgraph4j-test 预留 8082、langchain4j-test 8083,本模块的 Web 示例用 8084。
+  # 一个端口全包:SSE 聊天(示例 9)+ RAG 三接口 + MCP 服务(/mcp,Apifox 可连)
   port: 8084
 
 # GLM 模型配置的默认值(可提交 git)。
@@ -19,6 +20,14 @@ spring:
   # 这里用 config.import 显式引入,mvn spring-boot:run 就不用再带 -Dspring-boot.run.profiles=local
   config:
     import: optional:classpath:/application-local.yml
+  # PgVector 篇(示例 10~12 + Web RAG)的数据源:本机 Postgres.app(PG18) 的 rag_demo 库,
+  # vector 扩展已提前 CREATE EXTENSION vector;密码为空(Postgres.app 默认),用户 = macOS 用户名。
+  # 启动类 SpringAiApplication 启动即连 PG(自动建 vector_store 表);若只想跑 SSE 不连库,
+  # 可在启动类 exclude 掉 DataSource/PGVector 两项自动配置(条件装配,可精确关掉)
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/rag_demo
+    username: chenxun
+    password: ""
   ai:
     openai:
       # Spring AI 自动配置读取 spring.ai.openai.*;这里用占位符引用 glm.*,
@@ -32,6 +41,32 @@ spring:
           model: ${glm.model}
           temperature: 0.7
       embedding:
+        # 注意:coding 专用端点只承诺 chat 可用,embeddings 走通用端点(路径同样不带 /v1)
+        base-url: https://open.bigmodel.cn/api/paas/v4
         embeddings-path: /embeddings
         options:
           model: ${glm.embedding-model}
+          # embedding-3 支持 256~2048 维。pgvector 的 HNSW/IVFFlat 索引最多 2000 维,
+          # 默认 2048 会建索引失败,所以压到 1024(主流选择,省空间、效果损失可忽略)。
+          # 此处只作用于自动配置的 EmbeddingModel(PgVector 篇);CLI 示例 7/8 走
+          # GlmModels 手动构建,仍是默认 2048 维——内存库自身入库/检索一致即可
+          dimensions: 1024
+    vectorstore:
+      pgvector:
+        # 首次运行自动建 vector_store 表(id, content, metadata, embedding)
+        initialize-schema: true
+        # 必须与 embedding 实际返回维度一致(见上面 dimensions: 1024)。
+        # 改维度后要先 DROP TABLE vector_store 再重跑,否则旧列维度对不上
+        dimensions: 1024
+    mcp:
+      server:
+        # Apifox 的 MCP 调试只认 STDIO/Streamable HTTP(不支持老 SSE 传输),
+        # 所以显式用 STREAMABLE:HTTP POST/GET + 可选 SSE 流,单端点双向通信
+        protocol: STREAMABLE
+        name: spring-ai-test-mcp
+        version: 1.0.0
+        type: SYNC
+        instructions: "spring-ai-test 学习模块的测试工具集:echo/时间/加法/知识库检索"
+        # 默认端点就是 /mcp,显式写出便于和 Apifox 里填的 URL 对照
+        streamable-http:
+          mcp-endpoint: /mcp

@@ -1,0 +1,11 @@
+pgvector 是 PostgreSQL 的开源向量检索扩展。它给 PostgreSQL 增加了 vector 数据类型，可以存固定长度的浮点向量，并提供三种距离算符：L2 欧氏距离、内积和余弦距离。向量相似度检索的本质，就是把文本转成向量后，找出与查询向量距离最近的那批记录。
+
+pgvector 支持两种向量索引。IVFFlat 是聚类索引，把向量分成若干聚类中心，查询时只扫最近的几个簇，建索引快但召回率一般。HNSW 是分层图索引，查询速度快、召回率高，代价是建索引慢、占内存多。数据量小的学习项目不建索引也能跑，全表扫描即可。
+
+RAG 即检索增强生成。大语言模型的知识停留在训练截止日，也读不到企业内部文档，直接问答就会瞎编。RAG 的做法是：把知识库文档切块，每一块用 embedding 模型转成向量存入向量库；用户提问时，把问题也转成向量，检索出最相似的几个片段，拼进提示词里让模型基于这些片段回答。
+
+文本切块是 RAG 质量的关键。块太大，检索粒度粗、噪声多；块太小，语义不完整。Spring AI 提供 TokenTextSplitter，按 token 数切块，块与块之间可以保留重叠部分，避免关键句子被切断。
+
+Spring AI 用 VectorStore 接口抽象向量库，PgVectorStore 是它面向 PostgreSQL 的实现，底层用 JdbcTemplate 读写。默认表名 vector_store，包含 id、content、metadata、embedding 四列。initialize-schema 设为 true 时，应用启动会自动建表，但 vector 扩展本身需要提前用 CREATE EXTENSION vector 启用。
+
+相似度分数是检索结果排序的依据。Spring AI 把向量距离换算成 0 到 1 之间的 score，越接近 1 表示语义越相似。实际项目里通常设一个分数阈值，低于阈值的检索结果不进提示词，宁可回答不知道也不硬凑上下文。

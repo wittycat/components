@@ -15,7 +15,7 @@
     <artifactId>spring-ai-test</artifactId>
     <version>1.0</version>
     <name>spring-ai-test</name>
-    <description>Spring AI 学习示例（CLI 递进式 + Web SSE）</description>
+    <description>Spring AI 学习示例（CLI 递进式 + Web SSE + PgVector 持久化 RAG）</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -60,6 +60,33 @@
             <artifactId>spring-ai-advisors-vector-store</artifactId>
         </dependency>
 
+        <!-- PgVector 篇（示例 10~12 + Web RAG）：PgVectorStore 自动配置，
+             向量持久化到 PostgreSQL 的 vector_store 表，替代内存 SimpleVectorStore -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-vector-store-pgvector</artifactId>
+        </dependency>
+
+        <!-- JDBC：PgVectorStore 底层用 JdbcTemplate 建表/读写（starter 已传递引入，显式声明更直观） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+
+        <!-- PG 驱动（版本由 Boot parent 管理）。Postgres.app 自带服务端，驱动只管客户端连接 -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- MCP 服务篇：把本模块能力暴露成 MCP Server（Streamable HTTP，端点 /mcp），
+             供 Apifox/Cursor/Claude 等 MCP 客户端连接调用 -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
+        </dependency>
+
         <!-- 示例 9（Web SSE）：Spring MVC + Flux<ServerSentEvent>（版本由 Boot parent 管理） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -75,7 +102,8 @@
 
     <build>
         <plugins>
-            <!-- Web SSE 示例用 mvn spring-boot:run 启动 -->
+            <!-- Web 示例用 mvn spring-boot:run 启动:全模块唯一启动类 SpringAiApplication,
+                 同时挂 SSE 聊天(示例 9)和 RAG 三接口(见该类注释) -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

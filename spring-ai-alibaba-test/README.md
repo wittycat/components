@@ -154,35 +154,51 @@ ReactAgent(agent-framework) = 帮你把"ReAct 循环"组装成上面这张图的
 | Agent 抽象 | ❌ 无(只有 ChatClient) | ✅ `ReactAgent` + 多 Agent/A2A(示例 5) |
 | 厂商原生参数 | ❌(OpenAI 协议语义) | ✅ 思考模式等(示例 2) |
 
-## 目录结构
-
-```
-spring-ai-alibaba-test/
-├── pom.xml                            # 双 BOM(框架 1.1.2.3 + extensions 1.1.2.1)+ dashscope starter + agent-framework
-├── README.md
-└── src/main/
-    ├── resources/
-    │   ├── application.yml            # dashscope.* 默认值 + spring.ai.dashscope.* 占位符映射
-    │   └── application-local.yml      # 本地私密配置(gitignore,放真实 api-key)
-    └── java/com/wittycat/springaialibaba/
-        ├── DashScopeConfig.java       # dashscope.* 配置加载(与仓库其他模块同一约定)
-        ├── DashScopeModels.java       # 模型工厂:CLI 示例手动构建 DashScopeChatModel
-        ├── Example1_QuickStart.java   # ①最小对话(代码与 spring-ai-test 零差异)
-        ├── Example2_QwenThinking.java # ②Qwen 思考模式(厂商原生参数的收益)
-        ├── Example3_StateGraph.java   # ③Graph 纯状态机(不需要 Key,含 Mermaid 导出)
-        ├── Example4_GraphRouting.java # ④LLM 意图分类 + 条件路由工作流
-        ├── SupportRoutingGraph.java   #   示例 4/6 共用的图定义(纯 Java,不绑定 Spring)
-        ├── Example5_ReactAgent.java   # ⑤ReactAgent:工具+结构化输出+threadId 记忆
-        └── web/
-            ├── WebApplication.java    # ⑥Spring Boot 启动类(端口 8085,starter 自动配置)
-            └── SupportController.java #   按节点 SSE 流式接口
-```
-
 ## 常见问题
 
-- **报"未找到 DashScope API Key"**:`application-local.yml` 里没填有效 key(还是占位 `demo`),见"环境准备";key 在百炼控制台"API-KEY 管理"页创建。
-- **示例 2 报模型不支持思考模式**:换 `dashscope.model` 为 qwen-plus 或 qwen3 系列;`thinkingBudget` 仅部分 qwen3 模型支持,报错就删掉那一行。
-- **依赖下载失败**:多半是全局 settings 镜像的私有 Nexus 不在线(报 `100.72.14.18:8081 failed to respond`),等私服恢复后重试;之前失败被缓存的话加 `-U` 强制刷新。急用时也可临时写一个只含阿里云公共仓镜像(`https://maven.aliyun.com/repository/public`)的 settings 文件,用 `mvn -s` 指过去绕行。
-- **版本错配冲突**:本模块锁定 Spring AI 1.1.2(由 alibaba BOM 管理),不要把 spring-ai-test 的 1.1.8 BOM 抄进来,否则 agent-framework 编译行为不一致。
-- **端口冲突**:Web 示例占 8085(8080~8084 已被其他模块占用),要改就动 `application.yml` 的 `server.port`。
-- **Graph 能像 LangChain 那样断点续跑/人工审批吗**:能。`compile(CompileConfig)` 配 Saver + `interruptBefore("节点名")`,恢复时带上 `withResume()`;本模块为控制篇幅未演示,思路见 `langgraph4j-test`(同名机制)。
+### 概念问答(学习过程的提问整理)
+
+**模型与平台**
+
+**Q1:Qwen 和 DashScope 什么关系?阿里的模型都叫什么?**
+
+答:Qwen(通义千问)是**模型**,DashScope(阿里云百炼)是**承载模型的平台**——鉴权用平台的 key,请求体里用模型名指定要哪个"商品",全行业都是这个模式。和智谱侧完全同构:
+
+| | 模型(商品) | 平台(商店) | 本模块配置 |
+|---|---|---|---|
+| 阿里 | Qwen / qwen-plus | DashScope / 百炼 | `dashscope.api-key` + `dashscope.model` |
+| 智谱 | GLM / glm-5.3-flash | open.bigmodel.cn | spring-ai-test 的 `glm.*` |
+
+百炼(控制台产品名)和 DashScope(API 服务名)基本指同一个平台;货架上除 Qwen 外还托管 DeepSeek、Kimi 等三方模型。命名速记:qwen-turbo/plus/max 按档位(快/均衡/最强),qwen3 是新一代;Qwen-VL/Audio/Coder 是专精方向;QwQ 已并入 qwen3 的 `enableThinking` 开关(示例 2);通义万相(wanx/wan)是图像视频;text-embedding-v4/gte-rerank 是 RAG 基建。
+
+**提示词与消息**
+
+**Q2:`.system()` 和 `.systemPrompt()` 什么区别?**
+
+答:都是给对话挂系统提示词的入口,最终都产出一条 SYSTEM 角色的消息,区别在**谁管这次调用**:
+
+| 对比项 | `.system()` | `.systemPrompt()` |
+|---|---|---|
+| 是什么 | ChatClient 的方法 | SAA `agent.Builder` 的方法 |
+| 所在层 | 单次请求构建期 | Agent 装配期,build 时设一次 |
+| 生效范围 | 仅当次 `prompt()...call()`,下次要重新设 | Agent 内每次 LLM 调用(ReAct 循环每一跳)都自动带 |
+| 模块用例 | 示例 4 各图节点 | 示例 5 ReactAgent |
+
+为什么 ReactAgent 只能有一个 systemPrompt?Agent 内部 ReAct 循环每一跳都由框架帮你调 ChatClient,你插不进去,提示词必须 build 时一次设定;图节点模式每次调用自己管,所以三个应答节点能各挂各的 `.system()`。
+
+**Agent 层**
+
+**Q3:ReactAgent 和一次带工具的调用(ChatClient.tools())什么区别?**
+
+答:差别不在"能不能调工具",而在**谁管循环和状态**。一次调用是"一锤子买卖":内部同样会执行"模型要工具→框架执行→回填→模型继续"的循环,但对你完全透明、结束即销毁;ReactAgent 是有生命周期的 Agent 对象:
+
+| 对比维度 | 一次调用(`.tools()`) | ReactAgent |
+|---|---|---|
+| 本质 | 一次请求管线 | 框架生成的 ReAct 图(LLM 节点+工具节点的环) |
+| 循环 | 有但透明,模型出答案即停 | 显式 ReAct 循环,轮数等参数可配 |
+| 记忆 | 无,历史要自己拼 prompt | `saver`+`threadId` 自动带(示例 5) |
+| 提示词/输出约束 | 每次调用手动设(`.system()`/`.entity()`) | 装配期设一次,终身生效 |
+| 扩展协作 | Advisor(请求管线拦截器) | Hook/子 Agent/多 Agent 模式 |
+| 适用 | 单步:分类/抽取/一次问答 | 多步:循环决策/跨轮记忆/多角色协作 |
+
+最直观的分水岭是记忆:示例 5 两轮 `call` 同一个 threadId,第二轮不重复工单号 Agent 也记得;一次调用模式要自己拼历史。一句话:一次调用 = 临时工,ReactAgent = 有工位(threadId)、有岗位说明(systemPrompt)、有工作记录(saver)的员工。

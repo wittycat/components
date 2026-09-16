@@ -2,6 +2,7 @@ package com.wittycat.langchain4j;
 
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.chat.listener.ChatModelListener;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
@@ -31,14 +32,20 @@ public final class GlmModels {
         return createChatModel(0.7, 2048);
     }
 
-    /** 聊天模型,可调采样参数 */
-    public static ChatModel createChatModel(double temperature, int maxOutputTokens) {
+    /**
+     * 聊天模型,可调采样参数。
+     * 可变参数 listeners 用来挂模型层监听器(如 SimpleLoggerChatModelListener,等价 Spring AI 的
+     * SimpleLoggerAdvisor),不传就是不带监听,旧调用点不受影响。
+     */
+    public static ChatModel createChatModel(double temperature, int maxOutputTokens,
+                                            ChatModelListener... listeners) {
         return OpenAiChatModel.builder()
                 .baseUrl(GlmConfig.baseUrl())
                 .apiKey(GlmConfig.resolveApiKey())
                 .modelName(GlmConfig.model())
                 .temperature(temperature)
                 .maxTokens(maxOutputTokens)
+                .listeners(listeners)
                 .build();
     }
 
