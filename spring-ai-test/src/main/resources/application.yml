@@ -66,7 +66,15 @@ spring:
         name: spring-ai-test-mcp
         version: 1.0.0
         type: SYNC
+        tool-change-notification: true
         instructions: "spring-ai-test 学习模块的测试工具集:echo/时间/加法/知识库检索"
         # 默认端点就是 /mcp,显式写出便于和 Apifox 里填的 URL 对照
         streamable-http:
           mcp-endpoint: /mcp
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:sql/dynamic-mcp-schema.sql
+
+dynamic-mcp:
+  allowed-hosts: 127.0.0.1,localhost,::1

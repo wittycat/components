@@ -40,6 +40,12 @@
     </dependencyManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Spring AI OpenAI starter：自动配置 ChatModel / EmbeddingModel / ChatClient.Builder。
              智谱 GLM 提供 OpenAI 兼容端点，base-url 指过去即可，换 DeepSeek/Kimi 只改配置 -->
         <dependency>

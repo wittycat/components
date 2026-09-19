@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>动态 MCP 工具管理</title>
+    <style>
+      body {
+        max-width: 1280px;
+        margin: 24px auto;
+        padding: 0 16px;
+        font:
+          14px system-ui,
+          sans-serif;
+        color: #1f2937;
+      }
+      h1 {
+        margin-bottom: 4px;
+      }
+      .hint {
+        color: #64748b;
+        margin-bottom: 20px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0 24px;
+      }
+      th,
+      td {
+        border-bottom: 1px solid #e2e8f0;
+        padding: 8px;
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        background: #f8fafc;
+      }
+      button {
+        margin: 2px;
+        padding: 5px 9px;
+        cursor: pointer;
+      }
+      form {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      label.full {
+        grid-column: 1 / -1;
+      }
+      input,
+      select,
+      textarea {
+        box-sizing: border-box;
+        padding: 7px;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        font: inherit;
+      }
+      textarea {
+        min-height: 120px;
+        font-family: ui-monospace, monospace;
+      }
+      .actions {
+        grid-column: 1 / -1;
+      }
+      .enabled {
+        color: #15803d;
+      }
+      .disabled {
+        color: #b45309;
+      }
+      #message {
+        min-height: 20px;
+        color: #b91c1c;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>动态 MCP 工具管理</h1>
+    <div class="hint">
+      MCP 连接地址：<code id="mcpUrl"></code>。工具变更后服务端会发送
+      tools/list_changed 通知。
+    </div>
+    <div id="message" role="alert"></div>
+    <div>
+      <button id="refreshButton">刷新</button
+      ><button id="resyncButton">重新同步</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>名称</th>
+          <th>类型</th>
+          <th>方法/目标</th>
+          <th>状态</th>
+          <th>描述</th>
+          <th>更新时间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="toolRows"></tbody>
+    </table>
+    <h2 id="formTitle">新增工具</h2>
+    <form id="toolForm">
+      <label
+        >工具名称<input id="toolName" required pattern="[A-Za-z0-9_-]{1,64}"
+      /></label>
+      <label
+        >工具类型<select id="toolType">
+          <option value="ECHO">ECHO</option>
+          <option value="HTTP">HTTP</option>
+        </select></label
+      >
+      <label>描述<input id="description" required maxlength="1000" /></label>
+      <label id="methodLabel"
+        >HTTP 方法<select id="httpMethod">
+          <option>GET</option>
+          <option>POST</option>
+          <option>PUT</option>
+          <option>PATCH</option>
+          <option>DELETE</option>
+        </select></label
+      >
+      <label id="urlLabel" class="full"
+        >目标 URL<input
+          id="targetUrl"
+          maxlength="2048"
+          placeholder="http://127.0.0.1:8084/rag/search"
+      /></label>
+      <label class="full"
+        >输入 Schema<textarea id="inputSchema" required></textarea>
+      </label>
+      <label class="full">备注<input id="note" /></label>
+      <div class="actions">
+        <button type="submit">保存</button
+        ><button type="button" id="cancelButton">取消</button>
+      </div>
+    </form>
+    <script>
+      const api = "/dynamic-mcp/tools";
+      let editingId = null;
+      const $ = (id) => document.getElementById(id);
+      $("mcpUrl").textContent = `${location.origin}/mcp`;
+      $("inputSchema").value = JSON.stringify(
+        {
+          type: "object",
+          properties: { message: { type: "string" } },
+          required: ["message"],
+        },
+        null,
+        2,
+      );
+      function showMessage(message) {
+        $("message").textContent = message || "";
+      }
+      async function request(url, options) {
+        const response = await fetch(url, {
+          headers: { "Content-Type": "application/json" },
+          ...options,
+        });
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(
+            body.userTip || body.errorMessage || `HTTP ${response.status}`,
+          );
+        }
+        return response.status === 204 ? null : response.json();
+      }
+      async function loadTools() {
+        try {
+          const tools = await request(api);
+          $("toolRows").innerHTML = tools
+            .map(
+              (tool) =>
+                `<tr><td><code>${escapeHtml(tool.toolName)}</code></td><td>${escapeHtml(tool.toolType)}</td><td>${escapeHtml(tool.httpMethod || "")}<br>${escapeHtml(tool.targetUrl || "")}</td><td class="${tool.status === "ENABLED" ? "enabled" : "disabled"}">${tool.status}</td><td>${escapeHtml(tool.description)}</td><td>${tool.updateTime || ""}</td><td><button onclick="editTool(${tool.id})">编辑</button><button onclick="toggleTool(${tool.id}, '${tool.status}')">${tool.status === "ENABLED" ? "停用" : "启用"}</button><button onclick="deleteTool(${tool.id})">删除</button></td></tr>`,
+            )
+            .join("");
+        } catch (error) {
+          showMessage(error.message);
+        }
+      }
+      function escapeHtml(value) {
+        return String(value ?? "").replace(
+          /[&<>'"]/g,
+          (char) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              "'": "&#39;",
+              '"': "&quot;",
+            })[char],
+        );
+      }
+      window.editTool = async (id) => {
+        const tools = await request(api);
+        const tool = tools.find((item) => item.id === id);
+        if (!tool) return;
+        editingId = id;
+        $("formTitle").textContent = `编辑工具 #${id}`;
+        for (const key of [
+          "toolName",
+          "description",
+          "toolType",
+          "httpMethod",
+          "targetUrl",
+          "inputSchema",
+          "note",
+        ])
+          $(key).value = tool[key] || "";
+        updateHttpFields();
+        window.scrollTo({
+          top: document.body.scrollHeight,
+          behavior: "smooth",
+        });
+      };
+      window.toggleTool = async (id, currentStatus) => {
+        try {
+          await request(`${api}/${id}/status`, {
+            method: "PUT",
+            body: JSON.stringify({
+              status: currentStatus === "ENABLED" ? "DISABLED" : "ENABLED",
+            }),
+          });
+          await loadTools();
+        } catch (error) {
+          showMessage(error.message);
+        }
+      };
+      window.deleteTool = async (id) => {
+        if (!confirm("确定删除这个工具吗？")) return;
+        try {
+          await request(`${api}/${id}`, { method: "DELETE" });
+          await loadTools();
+        } catch (error) {
+          showMessage(error.message);
+        }
+      };
+      function updateHttpFields() {
+        const visible = $("toolType").value === "HTTP";
+        $("methodLabel").style.display = visible ? "flex" : "none";
+        $("urlLabel").style.display = visible ? "flex" : "none";
+      }
+      $("toolType").addEventListener("change", updateHttpFields);
+      $("refreshButton").addEventListener("click", loadTools);
+      $("resyncButton").addEventListener("click", async () => {
+        try {
+          await request(`${api}/resync`, { method: "POST" });
+          await loadTools();
+        } catch (error) {
+          showMessage(error.message);
+        }
+      });
+      $("cancelButton").addEventListener("click", () => {
+        editingId = null;
+        $("formTitle").textContent = "新增工具";
+        $("toolForm").reset();
+        $("inputSchema").value = JSON.stringify(
+          {
+            type: "object",
+            properties: { message: { type: "string" } },
+            required: ["message"],
+          },
+          null,
+          2,
+        );
+        updateHttpFields();
+      });
+      $("toolForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        showMessage("");
+        let schema;
+        try {
+          schema = JSON.parse($("inputSchema").value);
+        } catch (_) {
+          showMessage("输入 Schema 不是合法 JSON");
+          return;
+        }
+        const body = {
+          toolName: $("toolName").value,
+          description: $("description").value,
+          toolType: $("toolType").value,
+          httpMethod: $("httpMethod").value,
+          targetUrl: $("targetUrl").value,
+          inputSchema: JSON.stringify(schema),
+          note: $("note").value,
+        };
+        try {
+          await request(editingId ? `${api}/${editingId}` : api, {
+            method: editingId ? "PUT" : "POST",
+            body: JSON.stringify(body),
+          });
+          $("cancelButton").click();
+          await loadTools();
+        } catch (error) {
+          showMessage(error.message);
+        }
+      });
+      updateHttpFields();
+      loadTools();
+    </script>
+  </body>
+</html>

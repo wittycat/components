@@ -1,6 +1,6 @@
 # spring-ai-test —— Spring AI 学习示例
 
-[Spring AI](https://docs.spring.io/spring-ai/reference/) 是 Spring 官方的 AI 应用框架,本模块锁定 **1.1.8**(官方 BOM),配套父工程的 **Spring Boot 3.5.3**,要求 JDK 17+。包含 8 个**递进式** CLI 示例 + 1 个 **Spring Boot SSE 流式接口**,外加 PgVector 持久化篇(示例 10~12 + Web RAG 接口)和 MCP 服务篇(Apifox 可连),每个都是独立可运行的 main 类,注释里写清了每个知识点。
+[Spring AI](https://docs.spring.io/spring-ai/reference/) 是 Spring 官方的 AI 应用框架,本模块锁定 **1.1.8**(官方 BOM),配套父工程的 **Spring Boot 3.5.3**,要求 JDK 17+。包含 8 个**递进式** CLI 示例 + 1 个 **Spring Boot SSE 流式接口**,外加 PgVector 持久化篇(示例 10~12 + Web RAG 接口)、MCP 服务篇(Apifox 可连)和数据库驱动的动态 MCP 管理页,每个都是独立可运行的 main 类,注释里写清了每个知识点。
 
 > **版本说明**:Spring AI 2.0.x 已面向 Spring Boot 4 发布,但父工程锁定 Boot 3.5,所以本模块用 1.1.x 稳定线;想学 2.x 时把父工程 parent 和 pom 里的 `spring-ai.version` 一起升级,API 思路不变。
 >
@@ -144,6 +144,56 @@ MCP(Model Context Protocol)是"AI 应用接外部工具"的开放协议,三个�
 > 为什么用 Streamable HTTP 而不是默认 SSE:Apifox 的 MCP 调试只支持 STDIO 和 Streamable HTTP 两种传输,所以 application.yml 里显式配了 `spring.ai.mcp.server.protocol: STREAMABLE`(端点默认 `/mcp`)。
 >
 > 安全提示:HTTP 传输默认**无鉴权**,任何能访问 8084 的客户端都能列出并调用全部工具——只在本机调试用,暴露到 localhost 之外前要自加安全边界(如 Spring Security)。
+
+## 动态 MCP 篇（数据库驱动、界面管理）
+
+动态 MCP 工具定义保存在 PostgreSQL 的 `springai_mcp_tool_registration` 表中，管理页位于
+`http://127.0.0.1:8084/dynamic-mcp.html`。页面通过 REST API 修改数据库；应用随后把已启用定义同步到同一个
+`/mcp` 的 `McpSyncServer`，并发送 `notifications/tools/list_changed`。因此 MCP 客户端不需要重启服务，
+在支持通知的客户端中重新执行 `tools/list` 即可看到变化。
+
+### 包结构（DDD 四层）
+
+```
+com.wittycat.dynamicmcp
+├── interfaces/rest      # Controller + ExceptionHandler：HTTP 路由、DTO、错误码→状态码映射
+├── application          # DynamicMcpToolService：用例编排（校验→落库→按状态同步运行时）
+├── domain               # 模型/校验规则/异常 + 仓储、注册表两个接口（不碰 JDBC/MCP SDK）
+└── infrastructure       # 接口落地：JdbcDynamicMcpToolRepository / DynamicMcpRegistrar / DynamicToolExecutor
+```
+
+依赖方向 `interfaces → application → domain ← infrastructure`：领域层只定义"要什么"
+（`DynamicMcpToolRepository`、`DynamicMcpToolRegistry` 两个接口），基础设施层决定"怎么拿、
+怎么同步"；ErrorCode 只含业务语义，HTTP 状态码集中在接口层 ExceptionHandler 决定；
+数据库唯一键冲突由仓储实现翻译成领域异常。MCP SDK 类型被隔离在 `infrastructure/mcp`
+一个包里，换掉 SDK 只动那一处。
+
+管理接口如下：
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/dynamic-mcp/tools` | 查询未删除工具 |
+| POST | `/dynamic-mcp/tools` | 新建工具，服务端强制为 `DISABLED` |
+| PUT | `/dynamic-mcp/tools/{id}` | 修改定义，状态单独维护 |
+| PUT | `/dynamic-mcp/tools/{id}/status` | 启用或停用，body 为 `{"status":"ENABLED"}` |
+| DELETE | `/dynamic-mcp/tools/{id}` | 逻辑删除并从 MCP 移除 |
+| POST | `/dynamic-mcp/tools/resync` | 清理动态运行时副本并按数据库重建 |
+
+当前支持两类工具：`ECHO` 只回显参数，用来验证注册链路；`HTTP` 只允许访问
+`dynamic-mcp.allowed-hosts` 配置中的主机，默认是 `127.0.0.1`、`localhost` 和 `::1`。HTTP 工具支持路径占位符
+`{param}`、GET/DELETE query 参数和 POST/PUT/PATCH JSON body；请求和响应分别限制为 256 KiB 和 1 MiB，
+连接、请求超时均为 10 秒，禁止自动重定向、用户信息和敏感 Header 透传。
+
+启动时 SQL 初始化脚本会幂等创建表并插入 `echo_args`、`rag_kb_search` 两条启用工具。数据库是事实源，
+运行时注册表是它的副本；页面操作先成功写库，再更新 MCP。工具名必须匹配 `^[A-Za-z0-9_-]{1,64}$`，
+不能与 4 个静态工具重名。输入 Schema 只支持根 `object` 以及基础类型属性，暂不支持 `$ref`、`oneOf`、`anyOf`、`allOf`。
+
+验证动态通知时，先用同一 MCP session 执行 `tools/list`，在管理页启用一个工具，观察
+`notifications/tools/list_changed`，然后在同一 session 再执行 `tools/list`；停用和删除也应收到通知并看见工具消失。
+再建立一个新 session 检查重连后的最终列表。客户端如果不消费通知，需要手动刷新或重连，但服务端列表已经实时更新。
+
+这是学习模块，不提供登录鉴权、租户隔离或跨主机代理能力。不要把管理端口暴露到不受信任网络；生产场景应增加认证、
+CSRF 防护、审计和更严格的 URL allowlist。
 
 ## 核心概念速查
 
@@ -309,3 +359,62 @@ ChatClient(门面,链式 API)
 | 谁在用 | 示例 7(建库/入库/检索) | 示例 8(RAG Advisor 化) |
 
 生产换向量库时加对应 starter 换掉 SimpleVectorStore,Advisor 层一行不动——示例 10~12 就是现场演示(本模块 pom 里的 `spring-ai-starter-vector-store-pgvector`)。当初 import `QuestionAnswerAdvisor` 编译报错,就是因为模型 starter 两个构件都不带,需在 pom 手动加。
+
+**MCP 协议与进程模型**
+
+**Q17:MCP 底层的通信框架是 Servlet 吗?**
+
+答:不是。MCP 是应用层协议,不绑定任何通信框架——"协议/传输/载体"三层各管一件事:
+
+| 层 | 管什么 | 可选项 |
+|---|---|---|
+| 协议 | 说什么话:JSON-RPC 2.0 报文 + MCP 自己的会话约定(initialize 握手、capabilities 协商、`Mcp-Session-Id`、listChanged 通知) | 固定 |
+| 传输 | 走什么信道 | STDIO(进程管道,无 HTTP) / Streamable HTTP(POST /mcp,下行可选 SSE) |
+| 载体 | 用什么框架收发 | Servlet、Spring MVC、WebFlux/Netty… |
+
+一句话:**MCP 定协议,传输选信道,载体选框架,三者正交可替换。**本模块的 /mcp 走 Streamable HTTP 传输,由 `WebMvcStreamableServerTransportProvider` 挂进 Spring MVC,最终落在 Tomcat 的 Servlet 容器上——"底下是 Servlet"这个观察成立,但那是 starter 选了 MVC 栈的结果,不是 MCP 的属性(换成 webflux 版 starter 就跑 Netty,协议与业务代码零改动)。本地 SDK 0.18.3 里同一传输就有三套载体类:`StdioServerTransportProvider`(mcp-core)、`HttpServletStreamableServerTransportProvider`(mcp-core,原生 Servlet)、`WebMvcStreamableServerTransportProvider`(mcp-spring-webmvc,本模块在用)。
+
+**Q18:STDIO 是什么?**
+
+答:standard input/output,操作系统给每个进程自带的两条数据管道。作为 MCP 传输时:Host(Claude Desktop/Cursor 等)把 MCP Server 当**子进程**拉起,请求写进它的 stdin,响应从它的 stdout 读出,一行一条 JSON-RPC 消息——全程没有网络、没有端口、没有 HTTP。配置形态就是 command + args(Claude Desktop 配置里的 `{"command":"npx","args":[...]}`)。
+
+| 维度 | STDIO | Streamable HTTP(本模块) |
+|---|---|---|
+| 信道 | OS 管道 stdin/stdout | HTTP POST /mcp |
+| 部署 | Host 拉子进程,必须同机 | 独立服务,本机/远程都行 |
+| 生命周期 | Host 管(Host 退它也退) | 应用自己管,多客户端共享 |
+| 客户端配置 | command + args | URL(http://127.0.0.1:8084/mcp) |
+| 典型用户 | Claude Desktop / Cursor 装本地工具 | Apifox / 跨进程 AI 应用(本模块) |
+
+经典坑:STDIO 模式下 server 的日志**绝不能打 stdout**——stdout 是协议信道,混进一行日志客户端就解析失败,日志必须走 stderr 或文件。
+
+**Q19:MCP Server 有它自己的进程吗?**
+
+答:看传输。**"MCP Server"是协议角色,不是进程单位**——规范只规定消息怎么传,不管跑在哪个进程里。STDIO 模式必然是独立进程(Host 的子进程,装 N 个工具 = Host 身边 N 个子进程);HTTP 模式部署自由,可以是专属服务,也可以寄生在业务应用里。本模块是后者("合宿"形态):MCP Server 只是 SpringAiApplication 这一个 JVM 里的一个 Bean + /mcp 路由,和 /chat/stream、/rag/*、动态工具管理页同进程同端口。本机实测进程树:
+
+```
+launchd
+└─ IntelliJ IDEA(或 mvn)
+   └─ java(SpringAiApplication)   ← 应用唯一 JVM
+      └─ 子进程:0 个
+         (Tomcat、MCP Server、Hikari、动态工具注册表全是它内部的 Bean + 线程)
+Apifox(独立进程) ──HTTP──▶ 8084 ──▶ 这个 JVM
+```
+
+动态 MCP 篇正是利用了合宿特点:工具注册表与业务同 JVM,`addTool/removeTool` 直接操作同一个 McpSyncServer,毫秒级生效、无需跨进程通知。
+
+**Q20:spring-ai-test 跑起来有几个进程?**
+
+答:应用本身永远 1 个 JVM、0 个子进程;总数取决于启动方式:
+
+| 启动方式 | JVM 进程数 | 父子关系 |
+|---|---|---|
+| IDEA Run / `java -jar` | 1 | 挂在 IDEA 下,无子进程 |
+| `mvn spring-boot:run` | 2 | Boot 3.x 插件总是 fork:Maven 自己一个 JVM,应用是它的子进程 |
+| `mvn exec:java`(CLI 示例 10~12 用) | 1 | exec:java 在 Maven 同一个 JVM 里跑 main,不 fork |
+
+进程内是几十个线程(实测 68 个:Tomcat 工作线程、Hikari、MCP 等),线程不等于进程。什么时候才会冒出子进程:代码里调 ProcessBuilder/Runtime.exec,或配了 MCP Client 且走 STDIO(Client 会把每个 stdio server 拉成自己的子进程)——本模块两者都没有。
+
+**Q21:本模块用 STDIO 模式吗?**
+
+答:没有,两种角色都不沾。三处实锤:①pom 用 `spring-ai-starter-mcp-server-webmvc`(HTTP 版;STDIO 应是不带 webmvc 的 `spring-ai-starter-mcp-server`);②yml 配 `protocol: STREAMABLE` + `mcp-endpoint: /mcp`(STDIO 根本没有 endpoint 配置);③Apifox 用 URL 连接(STDIO 只有 command+args,由 Host 当子进程拉起,不会自己起服务)。另外本模块也没配 `spring.ai.mcp.client`,连 MCP 客户端角色都没有。想改 STDIO 版三步:starter 换无 web 版、`spring.main.web-application-type: none` 关 web、日志改打 stderr——不过对"Apifox 远程调 + 界面管理动态工具"的目标,留在 HTTP 是对的。
