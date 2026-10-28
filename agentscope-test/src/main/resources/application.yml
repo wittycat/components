@@ -5,7 +5,7 @@ server:
 spring:
   # 本地私密配置（真实 api-key 等），文件不进 git；optional=文件不存在时不报错
   config:
-    import: optional:application-local.yml
+    import: optional:application-local.yml, optional:application-local-deepseek.yml
   application:
     name: agentscope-test
 
@@ -16,3 +16,12 @@ glm:
   api-key: demo
   base-url: https://open.bigmodel.cn/api/coding/paas/v4
   model: glm-5.3-flash
+
+# DeepSeek 模型配置的默认值(供示例 7 使用)。
+# 真实 api-key 放在 application-local-deepseek.yml(已被 .gitignore 排除),不要写在这里。
+# 注意:Chat Completions 的 response_format 只支持 text/json_object;
+# 严格 Schema 约束走 Responses API 的 text.format.type=json_schema(见 Example7)。
+llm:
+  model-name: deepseek-flash
+  base-url: https://api.deepseek.com/v1
+  api-key: demo
